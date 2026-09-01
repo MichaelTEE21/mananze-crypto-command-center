@@ -1,0 +1,72 @@
+"""Stage 4 — Wallet tracking (public addresses only)."""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+import pandas as pd
+import streamlit as st
+
+from mccc.db import add_wallet, delete_wallet, init_db, list_wallets, log_event
+from mccc.demo_data import DEMO_WALLET_BALANCES
+from mccc.ui import demo_callout, hero, page_setup
+from mccc.wallets import balance_rows_for_address, validate_public_address
+
+page_setup("wallet_tracking", "Wallet Tracking")
+hero(
+    "Wallet Tracking",
+    "Watch public addresses only. Never enter seed phrases, private keys, or passwords.",
+)
+demo_callout("Balances may be DEMO or from public RPCs/explorers — source is labelled per row.")
+
+init_db()
+st.info("MCCC refuses private keys / seed phrases / passwords by design.")
+
+CHAINS = ["ethereum", "arbitrum", "base", "optimism", "polygon", "solana", "other"]
+
+with st.expander("Add DEMO watch addresses (one click)", expanded=False):
+    if st.button("Seed two DEMO addresses"):
+        for addr, meta in DEMO_WALLET_BALANCES.items():
+            existing = {w["address"] for w in list_wallets()}
+            if addr not in existing:
+                add_wallet(meta["label"], addr, meta["chain"], "DEMO seed watch address")
+        st.success("DEMO addresses added.")
+        st.rerun()
+
+with st.form("add_wallet", clear_on_submit=True):
+    c1, c2 = st.columns(2)
+    label = c1.text_input("Label", placeholder="Research watch #1")
+    chain = c2.selectbox("Chain", CHAINS)
+    address = st.text_input("Public address", placeholder="0x… or 0xDEMO…")
+    notes = st.text_input("Notes (optional)")
+    if st.form_submit_button("Add watch address", type="primary"):
+        try:
+            addr = validate_public_address(address, chain)
+            if not label.strip():
+                raise ValueError("Label required")
+            add_wallet(label, addr, chain, notes)
+            log_event("wallet_added", page_key="wallet_tracking", meta=addr[:12])
+            st.success("Watch address saved (public only).")
+            st.rerun()
+        except ValueError as e:
+            st.error(str(e))
+
+wallets = list_wallets()
+st.subheader(f"Watchlist ({len(wallets)})")
+if not wallets:
+    st.write("No addresses yet — add a public address or seed DEMO watches.")
+else:
+    st.dataframe(pd.DataFrame(wallets), use_container_width=True, hide_index=True)
+
+    pick_map = {f"#{w['id']} {w['label']} ({w['address'][:10]}…)": w for w in wallets}
+    pick = st.selectbox("Inspect balances", list(pick_map.keys()))
+    w = pick_map[pick]
+    rows = balance_rows_for_address(w["address"], w["chain"])
+    st.markdown(f"**Balances for `{w['address']}`**")
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    if st.button("Remove from watchlist"):
+        delete_wallet(w["id"])
+        st.warning("Removed.")
+        st.rerun()
