@@ -1,4 +1,4 @@
-"""SQLite persistence for MCCC — projects, airdrops, wallets, usage stats."""
+"""SQLite persistence for MCCC — projects, airdrops, wallets, partners, usage stats."""
 from __future__ import annotations
 
 import sqlite3
@@ -64,6 +64,29 @@ CREATE TABLE IF NOT EXISTS research_notes (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS partner_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    official_url TEXT NOT NULL,
+    referral_url TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    features TEXT DEFAULT '',
+    networks TEXT DEFAULT '',
+    logo_url TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'Active',
+    is_referral INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS partner_link_clicks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partner_link_id INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    clicked_at TEXT NOT NULL
+);
 """
 
 
@@ -91,6 +114,10 @@ def init_db(db_path: Optional[Path] = None) -> None:
         _seed_feature_flags(conn)
         _seed_airdrops_if_empty(conn)
         _seed_projects_if_empty(conn)
+    # Seed partner directory only when empty (outside connect so partners.py uses its own txn)
+    from mccc.partners import seed_demo_partners
+
+    seed_demo_partners(db_path)
 
 
 def _seed_feature_flags(conn: sqlite3.Connection) -> None:

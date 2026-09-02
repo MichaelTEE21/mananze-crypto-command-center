@@ -19,6 +19,8 @@ Built for **B=MananzeZA**. Never stores seed phrases, private keys, or passwords
 | 8 | Education | Static markdown lessons |
 | 9 | User Analytics | Local page/case usage stats in SQLite |
 | 10 | PRO Architecture | Feature flags + paywall mock (not charged) |
+| 11 | Partner Directory | Wallets / CEX / DEX / tools / partners — central DB links |
+| 12 | Admin Partner Links | CRUD + click analytics (local `MCCC_ADMIN_PASSWORD`) |
 
 ## Demo vs live
 
@@ -75,8 +77,8 @@ source .venv/bin/activate && pytest
 ```
 mccc/
   app.py                 # Stage 1
-  pages/                 # Stages 2–10
-  src/mccc/              # db, market, wallets, assistant, ui, demo_data
+  pages/                 # Stages 2–12
+  src/mccc/              # db, partners, market, wallets, assistant, ui, demo_data
   content/education/     # markdown lessons
   data/                  # SQLite (gitignored)
   tests/
@@ -85,11 +87,34 @@ mccc/
   .env.example
 ```
 
+
+## Partner Links
+
+Central SQLite tables `partner_links` + `partner_link_clicks` (no IP / UA / PII).
+
+- **Public:** sidebar → **Partner Directory** (Active only). Affiliate disclosure + seed-phrase warning shown.
+- **Admin:** sidebar → **Admin Partner Links**. Unlock with env `MCCC_ADMIN_PASSWORD`.
+  - If unset, local DEMO password is `mccc-admin-demo` (labelled in UI — not production auth).
+- Never hardcode referral URLs in pages — edit via Admin only.
+- DEMO seed partners use `example.com` (or official sites with empty referral) and are clearly labelled DEMO.
+- Disclosure (shown wherever partner links appear): *Some links on MCCC may be partner or referral links. MCCC may receive compensation if you sign up through eligible links, at no additional cost to you.*
+
+PowerShell tip — set admin password for a session:
+
+```powershell
+$env:MCCC_ADMIN_PASSWORD = "your-local-password"
+.\START.ps1
+```
+
+Or put `MCCC_ADMIN_PASSWORD=` in `.env` (copy from `.env.example`).
+
 ## Security
 
 - No private keys / seeds / passwords accepted.
 - Optional API keys only via `.env` (never commit secrets).
 - Usage analytics are local-only; no PII required.
+- Partner click analytics store only link id, category, and timestamp (no IP / fingerprint).
+- Partner admin is a local password gate only — not multi-user auth.
 
 ## Limitations
 

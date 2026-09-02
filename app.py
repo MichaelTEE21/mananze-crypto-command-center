@@ -17,7 +17,8 @@ from mccc import APP_NAME, APP_TAGLINE, __version__
 from mccc.db import init_db, list_airdrops, list_projects, list_wallets, usage_summary
 from mccc.demo_data import DEMO_PORTFOLIO, portfolio_summary
 from mccc.market import fetch_prices
-from mccc.ui import demo_callout, hero, inject_css, page_setup
+from mccc.partners import list_partner_links
+from mccc.ui import affiliate_disclosure, demo_callout, hero, inject_css, page_setup
 
 page_setup("command_center", "Command Center")
 
@@ -49,6 +50,18 @@ with c4:
         f'DEMO portfolio · {folio["source"]}</div>',
         unsafe_allow_html=True,
     )
+
+# Partner directory teaser
+partner_count = len(list_partner_links(status="Active"))
+st.markdown(
+    f'<div class="mccc-card"><span class="mccc-badge">PARTNERS</span>'
+    f'<p style="margin:0.4rem 0 0;color:#e8eef5;"><strong>Platform Directory</strong> · {partner_count} active listings</p>'
+    f'<p style="margin:0.2rem 0 0;color:#9aa7b5;font-size:0.9rem;">'
+    f'Open <em>Partner Directory</em> in the sidebar for wallets, CEX, DEX, tools &amp; partners. '
+    f'Some links may be partner/referral links; MCCC may receive compensation at no extra cost to you.</p></div>',
+    unsafe_allow_html=True,
+)
+affiliate_disclosure()
 
 demo_callout()
 
@@ -103,6 +116,8 @@ stages = [
     ("08", "Education", "Markdown lessons"),
     ("09", "User Analytics", "Local usage stats"),
     ("10", "PRO Architecture", "Feature flags & paywall mock"),
+    ("11", "Partner Directory", "Wallets / CEX / DEX / tools — central links"),
+    ("12", "Admin Partner Links", "CRUD + click analytics (local password)"),
 ]
 cols = st.columns(2)
 for i, (num, name, desc) in enumerate(stages):

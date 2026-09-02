@@ -139,3 +139,45 @@ def pro_locked_panel(feature_name: str) -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def affiliate_disclosure() -> None:
+    """Required wherever partner / referral links appear."""
+    from mccc.partners import AFFILIATE_DISCLOSURE
+
+    st.info(AFFILIATE_DISCLOSURE)
+
+
+def seed_phrase_warning() -> None:
+    """Surface the never-ask-seed / private-key warning."""
+    from mccc.partners import SEED_PHRASE_WARNING
+
+    st.warning(SEED_PHRASE_WARNING)
+
+
+def partner_cta(link: dict, key_prefix: str = "partner") -> None:
+    """Render CTA: Track & open records a click, then primary link_button to resolved URL."""
+    from mccc.partners import cta_label, record_click, resolve_visit_url
+
+    url = resolve_visit_url(link)
+    label = cta_label(link.get("category", "Partner"))
+    is_ref = bool((link.get("referral_url") or "").strip())
+    dest_note = "Partner / referral destination" if is_ref else "Official website"
+    lid = link["id"]
+    open_key = f"{key_prefix}_open_{lid}"
+    track_key = f"{key_prefix}_track_{lid}"
+
+    st.caption(f"Outbound: **{dest_note}** · `{url}`")
+    col_a, col_b = st.columns((1, 1))
+    with col_a:
+        if st.button("Track & open", key=track_key, use_container_width=True):
+            try:
+                record_click(lid)
+                st.session_state[open_key] = url
+                st.success("Visit logged (no IP / fingerprint stored).")
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Could not log visit: {exc}")
+    with col_b:
+        st.link_button(label, url, use_container_width=True)
+    if st.session_state.get(open_key):
+        st.link_button("Open now", st.session_state[open_key], type="primary", use_container_width=True)

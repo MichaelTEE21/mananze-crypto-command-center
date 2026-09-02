@@ -11,7 +11,8 @@ import streamlit as st
 
 from mccc.db import add_wallet, delete_wallet, init_db, list_wallets, log_event
 from mccc.demo_data import DEMO_WALLET_BALANCES
-from mccc.ui import demo_callout, hero, page_setup
+from mccc.partners import list_partner_links
+from mccc.ui import affiliate_disclosure, demo_callout, hero, page_setup, partner_cta, seed_phrase_warning
 from mccc.wallets import balance_rows_for_address, validate_public_address
 
 page_setup("wallet_tracking", "Wallet Tracking")
@@ -23,6 +24,21 @@ demo_callout("Balances may be DEMO or from public RPCs/explorers — source is l
 
 init_db()
 st.info("MCCC refuses private keys / seed phrases / passwords by design.")
+seed_phrase_warning()
+
+with st.expander("Approved wallets (Partner Directory)", expanded=False):
+    affiliate_disclosure()
+    wallets_partners = list_partner_links(status="Active", category="Wallet")
+    if not wallets_partners:
+        st.caption("No Active Wallet partners in the central directory yet.")
+    else:
+        for link in wallets_partners:
+            st.markdown(f"**{link['name']}** — {link.get('description') or ''}")
+            if link.get("official_url"):
+                st.caption(f"Official: {link['official_url']}")
+            partner_cta(link, key_prefix="wallet_approved")
+            st.divider()
+
 
 CHAINS = ["ethereum", "arbitrum", "base", "optimism", "polygon", "solana", "other"]
 
