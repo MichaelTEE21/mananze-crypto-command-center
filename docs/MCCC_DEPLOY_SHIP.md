@@ -1,9 +1,9 @@
 # MCCC Deploy Ship Notes (2026-09-02 SAST)
 
 ## Git
-- **HEAD:** `b14470457be8fa4f874ce5b04a202dab15083531`
+- **HEAD:** `3ace35e602ed94bfc8144ecfc5e90483c33f2703`
 - **Commit:** MCCC 2.4.0 Phase 1 + production deploy artifacts (Render-first)
-- **Bundle:** `/workspace/mccc-deploy.bundle` (origin/main..HEAD, 7 commits)
+- **Bundle:** `/workspace/mccc-deploy.bundle` (origin/main..HEAD)
 - **Push:** blocked — `gh`/`git push` not authenticated (ENELO must push)
 
 ## Artifacts
