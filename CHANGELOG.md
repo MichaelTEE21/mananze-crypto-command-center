@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.0 — Intelligence Agent Phase 1
+
+- Add MCCC Intelligence Agent foundation (engine ≠ chatbot): modular pipeline INGEST→NORMALIZE→DEDUPE→CLASSIFY→EXTRACT→SCORE→SUMMARIZE→STORE
+- Tables: intelligence_events, intelligence_sources, funding_rounds, intelligence_candidates, narratives, intelligence_watchlist, ingestion_runs
+- Intelligence Center page with Breaking / New Projects / Funding / Airdrop Signals / Token Events / Narratives / Watchlist
+- DEMO/SYNTHETIC seed fixtures clearly labelled; optional live RSS soft-fail; no fabricated funding/investors/TGEs
+- Repository layer over SQLite (local); production-swappable — not claimed durable on Vercel
+
+
+
 All notable changes to MANANZE CRYPTO COMMAND CENTER (MCCC) are documented here.
 
 ## 2.0.0 — Release (2026-09-02)

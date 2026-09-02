@@ -15,6 +15,8 @@ ITEM_TYPES = (
     "lesson",
     "exchange",
     "note",
+    "intelligence_event",
+    "narrative",
     "other",
 )
 

@@ -615,6 +615,13 @@ def init_db(db_path: Optional[Path] = None) -> None:
     from mccc.exchanges import seed_demo_exchanges
 
     seed_demo_exchanges(db_path)
+    # Intelligence Agent Phase 1 — schema + DEMO seed (never auto-mixed as live)
+    try:
+        from mccc.intelligence.pipeline import IntelligencePipeline
+
+        IntelligencePipeline(db_path).seed_demo_if_empty()
+    except Exception:
+        pass
 
 
 def _seed_feature_flags(conn: sqlite3.Connection) -> None:
