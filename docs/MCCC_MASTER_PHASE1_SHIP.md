@@ -60,6 +60,8 @@
 6. Optional secrets from `.env.example` in Render dashboard.
 
 **Alternatives:** Streamlit Community Cloud (native); Railway/Fly (same Dockerfile).  
+**Streamlit Community Cloud (SECOND):** same repo `app.py` + secrets — mirror/demo URL.
+
 **Vercel:** blocked (serverless ≠ Streamlit long-running server).
 
 ### This environment

@@ -1,6 +1,5 @@
-# Railway config — deploy Dockerfile from repo root.
-# User must: Railway → New Project → Deploy from GitHub → select this repo.
-# Set a volume mounted at /app/data for SQLite persistence.
+# Railway — same GitHub repo / Dockerfile as Render (secondary Docker host).
+# Mount a volume at /data for SQLite persistence (matches Dockerfile MCCC_DATA_DIR).
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
