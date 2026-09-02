@@ -40,7 +40,11 @@ from mccc.ui import (
     empty_state,
     footer,
     hero,
+    maybe_show_support_soft_prompt,
+    render_support_cta_banner,
     metric_card,
+    metric_with_explainer,
+    page_shell,
     page_setup,
     quick_actions,
     section_header,
@@ -116,13 +120,28 @@ page_setup("command_center", "Command Center")
 
 hero(
     "MCCC",
-    "DON'T JUST WATCH CRYPTO. UNDERSTAND IT. · v" + __version__,
+    "Understand Crypto. Read the Chain. Learn as You Go. · v" + __version__,
+)
+st.markdown(
+    '<p style="color:#9aa7b5;letter-spacing:0.12em;font-size:0.85rem;margin:0.2rem 0 0.35rem;">'
+    "DON'T JUST WATCH CRYPTO. UNDERSTAND IT."
+    "</p>",
+    unsafe_allow_html=True,
 )
 st.markdown(
     '<p style="color:#9aa7b5;letter-spacing:0.12em;font-size:0.85rem;margin:0.2rem 0 0.85rem;">'
     "Search. Analyse. Learn. Monitor. Act."
     "</p>",
     unsafe_allow_html=True,
+)
+
+
+
+page_shell(
+    "Markets, trackers, and intel feeds update from public sources or labelled DEMO.",
+    "A single cockpit to search, analyse, and learn — without custodial risk.",
+    "Use Universal Search → ANALYSE, or open On-chain / Intelligence.",
+    "New here? Start Crypto → Academy. Prefer verifying networks before any transfer.",
 )
 
 init_db()
@@ -181,8 +200,14 @@ st.caption(
     f"{APP_NAME} · {APP_TAGLINE} · public data & labelled DEMO only · not financial advice"
 )
 
+# Persistent Support CTA + first-visit soft prompt (delayed; never every navigation)
+render_support_cta_banner(compact=True)
+maybe_show_support_soft_prompt("command_center")
+
+
 # --- Market snapshot ---
 section_header("Market snapshot", "BTC / ETH / SOL · mcap & dominance when available")
+st.caption("Beginner: prices are public market quotes when LIVE; DEMO means practice data — not a signal to trade.")
 overview, ov_source, ov_live = provider.get_overview()
 data_mode_chip(ov_live)
 st.caption(f"Source: {ov_source}")

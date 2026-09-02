@@ -189,4 +189,8 @@ try:
 except Exception as exc:  # noqa: BLE001
     st.caption(f"RWA watchlist unavailable: {exc}")
 
+st.caption(
+    "Alerts fire only from rules you configure against available data — MCCC never invents alert history or fake firings."
+)
+
 footer("Watchlist")

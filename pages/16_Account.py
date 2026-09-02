@@ -136,6 +136,10 @@ with tab_security:
         """
         ### Password change
         Uses **scrypt** (stdlib). App password only — never your wallet seed or exchange password.
+
+        **Email password reset:** not enabled yet (Coming Soon). If you forget your app password
+        on a local DB you control, you may need a fresh register after soft-delete, or DB-side recovery.
+        Hosted multi-tenant email reset is out of scope until Postgres + mailer land.
         """
     )
     if not user:

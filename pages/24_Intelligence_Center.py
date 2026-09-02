@@ -23,6 +23,7 @@ from mccc.intelligence.report.ui_render import (
     render_security_block,
 )
 from mccc.ui import (
+    render_support_cta_banner,
     data_mode_chip,
     demo_callout,
     empty_state,
@@ -305,4 +306,5 @@ if hi:
             st.success("Added")
             st.rerun()
 
+render_support_cta_banner(compact=True)
 footer("Intelligence Center · Reports + Agent feed · engine is not a chatbot")

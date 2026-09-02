@@ -20,9 +20,9 @@ from mccc.education import (
 from mccc.paths import ensure_dirs
 from mccc.ui import empty_state, hero, metric_card, page_setup, section_header, session_user_id, footer
 
-page_setup("education", "Education")
+page_setup("education", "Academy")
 hero(
-    "Education",
+    "Academy",
     "BEGINNER → INTERMEDIATE → ADVANCED local lessons. Progress is what you mark — no fake completion metrics.",
 )
 

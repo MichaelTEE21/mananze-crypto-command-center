@@ -158,4 +158,4 @@ def test_token_snapshot_placeholders():
 def test_version_bump():
     from mccc import __version__
 
-    assert __version__ == "2.4.0"
+    assert __version__ == "2.5.0"

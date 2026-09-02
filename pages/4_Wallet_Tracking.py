@@ -14,6 +14,7 @@ from mccc.demo_data import DEMO_WALLET_BALANCES
 from mccc.partners import list_partner_links
 from mccc.subscriptions import check_limit, require_can_add
 from mccc.ui import (
+    page_shell,
     affiliate_disclosure,
     demo_callout,
     empty_state,
@@ -29,6 +30,13 @@ from mccc.wallets import balance_rows_for_address, validate_public_address
 from mccc.watchlist import add_item as add_watch_item
 
 page_setup("wallet_tracking", "Wallet Tracking")
+page_shell(
+    "You track public addresses only — never seeds or keys.",
+    "Watch activity without giving MCCC custody.",
+    "Open On-chain explorers or ANALYSE into Intelligence Report.",
+    "Start Crypto → wallet security lessons first.",
+)
+
 hero(
     "ANALYZE A PUBLIC WALLET",
     "PASTE A WALLET. SEE THE STORY BEHIND THE ADDRESS. · Public addresses only",

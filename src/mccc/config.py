@@ -20,6 +20,9 @@ OPTIONAL_ENV = (
     ("MCCC_BOOTSTRAP_ADMIN_EMAIL", "Promote matching user to is_admin on boot"),
     ("MCCC_PRO_UNLOCK", "Set 1 to unlock PRO locally (not payment)"),
     ("MCCC_DEV", "Set 1 to enable Diagnostics page / Admin diagnostics"),
+    ("MCCC_BTC_DONATION_ADDRESS", "Public BTC donation address (has default)"),
+    ("MCCC_ETH_DONATION_ADDRESS", "Public ETH donation address (has default)"),
+    ("MCCC_SOL_DONATION_ADDRESS", "Public SOL donation address (has default)"),
 )
 
 # Keys that must NEVER be treated as required for startup

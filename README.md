@@ -1,13 +1,13 @@
 # MANANZE CRYPTO COMMAND CENTER (MCCC)
 
-**DON'T JUST WATCH CRYPTO. UNDERSTAND IT.**
+**Understand Crypto. Read the Chain. Learn as You Go.**
 
-Search. Analyse. Learn. Monitor. Act.
+DON'T JUST WATCH CRYPTO. UNDERSTAND IT. · Search. Analyse. Learn. Monitor. Act.
 
 Premium local Streamlit dashboard for crypto intelligence & education.
 Built for **B=MananzeZA**. Never stores seed phrases, private keys, or passwords.
 
-**Version:** `2.4.0`
+**Version:** `2.5.0`
 
 ## What works out of the box
 
@@ -31,6 +31,9 @@ Built for **B=MananzeZA**. Never stores seed phrases, private keys, or passwords
 | Token Intelligence | Works — market sourced; holders/tokenomics/locks UNAVAILABLE (Phase 2) |
 | Calendar | Works — schema + Month/List + DEMO seeds (live feeds Phase 2–3) |
 | RWA Intelligence | Works — profiles, disclosure framework, DEMO seeds |
+| Support MCCC / Donate | Works — BTC/ETH/SOL public addresses + QR (env or defaults) |
+| About / Privacy / Terms | Works — lightweight Streamlit pages |
+| Chain Explorers | Works — ETH/BTC/SOL providers; else UNAVAILABLE |
 
 ## What needs keys (optional)
 
@@ -44,6 +47,7 @@ Built for **B=MananzeZA**. Never stores seed phrases, private keys, or passwords
 | `MCCC_PRO_UNLOCK=1` | Local PRO UI unlock (**not** a payment) |
 | `MCCC_DEV=1` | Diagnostics page + Admin Diagnostics tab |
 | `AUTH_SECRET` | Stable session salt (ephemeral if unset) |
+| `MCCC_BTC/ETH/SOL_DONATION_ADDRESS` | Public donation addresses (defaults documented) |
 
 Missing optional keys **warn at startup** — the app never crashes for them.
 
@@ -148,6 +152,10 @@ Central SQLite `partner_links` + `partner_link_clicks` (no IP / UA / PII).
 
 
 ## Deployment (production)
+
+See **`docs/DEPLOYMENT.md`** (PRIMARY Render `srv-dabgrrp5efls73anlhe0`). Also `docs/SECURITY.md`, `docs/MCCC_BUILD_STATUS.md`.
+
+## Deployment (production) — legacy
 
 MCCC is a **long-running Streamlit** app (not a Vercel serverless function). Full audit: `docs/MCCC_DEPLOYMENT_AUDIT.md`. Host guide: `docs/DEPLOY.md`. Vercel blocker: `docs/MCCC_VERCEL_BLOCKER.md`.
 

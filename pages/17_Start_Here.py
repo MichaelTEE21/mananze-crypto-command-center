@@ -10,6 +10,7 @@ import streamlit as st
 
 from mccc.partners import list_partner_links
 from mccc.ui import (
+    render_support_cta_banner,
     footer,
     affiliate_disclosure,
     empty_state,
@@ -21,8 +22,8 @@ from mccc.ui import (
 
 page_setup("start_here", "Start Here")
 hero(
-    "Start Here",
-    "Beginner onboarding for MCCC — security first, then wallets, exchanges, and research tools.",
+    "Start Crypto",
+    "Beginner journey — security first, then Academy, explorers, trackers. Understand Crypto. Read the Chain. Learn as You Go.",
 )
 
 st.markdown(
@@ -43,12 +44,16 @@ affiliate_disclosure()
 
 st.subheader("Suggested path")
 steps = [
-    ("📚 Education", "pages/8_Education.py", "Read wallet + security lessons first"),
+    ("📚 Academy", "pages/8_Education.py", "Read wallet + security lessons first"),
+    ("🔗 Explorers", "pages/32_Chain_Explorers.py", "Public address / tx lookup — UNAVAILABLE when no provider"),
+    ("🛰️ Intelligence", "pages/24_Intelligence_Center.py", "Analyse → Intelligence Report (grounded)"),
     ("👤 Account", "pages/16_Account.py", "Optional local profile"),
     ("💼 Portfolio", "pages/13_Portfolio.py", "Track cost basis (manual)"),
-    ("📁 Projects", "pages/2_Project_Tracker.py", "Open research cases"),
+    ("📁 Projects", "pages/2_Project_Tracker.py", "Statuses: DISCOVERED → RESEARCHING → … (no fake claims)"),
+    ("⭐ Watchlist", "pages/14_Watchlist.py", "Rules you define — no fabricated alert firings"),
     ("🪂 Airdrops", "pages/3_Airdrop_Tracker.py", "Eligibility notes — not claims"),
     ("📈 Markets", "pages/1_Markets.py", "Live or labelled DEMO prices"),
+    ("💜 Support MCCC", "pages/28_Support_MCCC.py", "Optional public donations"),
 ]
 for label, path, hint in steps:
     cols = st.columns((2, 3))
@@ -78,4 +83,5 @@ for cat, title in [("Wallet", "Wallets"), ("CEX", "Centralized exchanges")]:
 
 st.info("Not financial advice. Do your own research. MCCC will never ask for your seed phrase.")
 
+render_support_cta_banner(compact=True)
 footer("Start Here")

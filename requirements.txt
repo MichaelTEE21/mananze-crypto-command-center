@@ -5,3 +5,5 @@ requests==2.32.3
 python-dotenv==1.0.1
 altair==5.4.1
 pytest==8.3.3
+qrcode==8.0
+Pillow==10.4.0

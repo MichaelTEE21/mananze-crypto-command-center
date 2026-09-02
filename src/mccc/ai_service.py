@@ -31,14 +31,21 @@ REFUSAL = (
 
 UNAVAILABLE = "Information unavailable"
 
+# Analyst grounding vocabulary (prefer these in answers)
+LABEL_VERIFIED = "VERIFIED"       # sourced from retrieved provider / report data
+LABEL_CALCULATED = "CALCULATED"   # derived from retrieved fields (e.g. wei→ETH)
+LABEL_INFERENCE = "INFERENCE"     # explicit opinion / heuristic — not a fact
+LABEL_UNAVAILABLE = "UNAVAILABLE"
+
 RESEARCH_CHECKLIST = [
     "Define the open question and success criteria",
     "Collect primary sources (docs, explorer, audits) with dates",
     "Map token / governance / upgrade risks",
-    "Separate FACT / DATA / ANALYSIS / SPECULATION in notes",
+    "Separate VERIFIED / CALCULATED / INFERENCE / UNAVAILABLE (and FACT/DATA/ANALYSIS)",
     "Check LIVE vs DEMO before using any market number",
     "Never paste seeds, private keys, or exchange 2FA into tools",
     "Record next action + last_checked on the Project Tracker row",
+    "Ground answers on Intelligence Report / explorer retrieval — never invent txs",
 ]
 
 _MARKET_QUERY_RE = re.compile(
@@ -225,7 +232,7 @@ class OpenAICompatibleProvider(BaseAssistantProvider):
                 "You are MCCC research assistant. Never invent live prices or claim DEMO data is live. "
                 "Refuse any seed phrase / private key content. "
                 "Prefix statements with FACT, DATA, ANALYSIS, or SPECULATION. "
-                f"If unsure of a number or status, say '{UNAVAILABLE}'."
+                f"Label claims as VERIFIED (sourced), CALCULATED (derived), or INFERENCE. If unsure of a number or status, say '{UNAVAILABLE}'."
                 f"{market_hint}"
             )
             payload = {
@@ -330,7 +337,7 @@ def answer(
     if report_context and str(report_context).strip():
         grounded = (
             f"{q}\n\n---\nUse ONLY the following Intelligence Report context for on-chain/market claims. "
-            f"If a field is DATA UNAVAILABLE, say so — never invent.\n{ctx_block}"
+            f"If a field is DATA UNAVAILABLE, say so — never invent. Use VERIFIED / CALCULATED / INFERENCE labels.\n{ctx_block}"
         )
 
     provider = get_assistant_provider(prefer_llm=use_llm)

@@ -18,296 +18,17 @@ except Exception:
     pass
 
 
-CUSTOM_CSS = """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+def _load_css() -> str:
+    """Design-system CSS (premium terminal). Fallback kept minimal if import fails."""
+    try:
+        from mccc.design_system import build_css
 
-:root {
-  --mccc-bg: #0a0e13;
-  --mccc-panel: #121820;
-  --mccc-panel-2: #0f141b;
-  --mccc-border: #243040;
-  --mccc-border-soft: #1e2a36;
-  --mccc-text: #e8eef5;
-  --mccc-muted: #9aa7b5;
-  --mccc-accent: #00d4aa;
-  --mccc-success: #3dffb5;
-  --mccc-warn: #ffb020;
-  --mccc-danger: #ff6b6b;
-  --mccc-info: #5eb3ff;
-  --mccc-pro: #c4a0ff;
-}
+        return build_css()
+    except Exception:
+        return "<style>body{background:#070b10;color:#e8eef5;}</style>"
 
-html, body, [class*="css"] {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
-}
 
-/* Dense terminal cards */
-.mccc-hero {
-  background: linear-gradient(135deg, #0b0f14 0%, #12202b 45%, #0d281f 100%);
-  border: 1px solid var(--mccc-border-soft);
-  border-radius: 12px;
-  padding: 0.95rem 1.15rem;
-  margin-bottom: 0.7rem;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.35);
-}
-.mccc-hero h1 {
-  margin: 0;
-  font-size: 1.4rem;
-  letter-spacing: 0.04em;
-  color: var(--mccc-text);
-}
-.mccc-hero .tag {
-  color: var(--mccc-accent);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
-  margin-top: 0.25rem;
-}
-.mccc-hero .sub {
-  color: var(--mccc-muted);
-  margin-top: 0.35rem;
-  font-size: 0.85rem;
-}
-
-.mccc-section-header {
-  margin: 0.55rem 0 0.45rem;
-  padding-bottom: 0.35rem;
-  border-bottom: 1px solid var(--mccc-border-soft);
-}
-.mccc-section-header h3 {
-  margin: 0;
-  font-size: 1.02rem;
-  color: var(--mccc-text);
-  letter-spacing: 0.03em;
-}
-.mccc-section-header .sub {
-  color: var(--mccc-muted);
-  font-size: 0.78rem;
-  margin-top: 0.15rem;
-}
-
-.mccc-badge,
-.mccc-badge-success,
-.mccc-badge-warn,
-.mccc-badge-danger,
-.mccc-badge-info,
-.mccc-badge-pro,
-.mccc-badge-live,
-.mccc-badge-demo {
-  display: inline-block;
-  padding: 0.1rem 0.48rem;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  margin-right: 0.22rem;
-  vertical-align: middle;
-  line-height: 1.35;
-}
-.mccc-badge {
-  background: #1a2e28;
-  color: var(--mccc-accent);
-  border: 1px solid #00d4aa55;
-}
-.mccc-badge-success {
-  background: #0f2a1c;
-  color: var(--mccc-success);
-  border: 1px solid #3dffb555;
-}
-.mccc-badge-warn {
-  background: #2e241a;
-  color: var(--mccc-warn);
-  border: 1px solid #ffb02055;
-}
-.mccc-badge-danger {
-  background: #2a1414;
-  color: var(--mccc-danger);
-  border: 1px solid #ff6b6b55;
-}
-.mccc-badge-info {
-  background: #14202a;
-  color: var(--mccc-info);
-  border: 1px solid #5eb3ff55;
-}
-.mccc-badge-pro {
-  background: #241a2e;
-  color: var(--mccc-pro);
-  border: 1px solid #c4a0ff55;
-}
-.mccc-badge-live {
-  background: #0f2a1c;
-  color: var(--mccc-success);
-  border: 1px solid #3dffb555;
-}
-.mccc-badge-demo {
-  background: #2a2210;
-  color: #ffcc66;
-  border: 1px solid #ffcc6655;
-}
-
-.mccc-chip-live, .mccc-chip-demo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.18rem 0.65rem;
-  border-radius: 8px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-}
-.mccc-chip-live {
-  background: #0f2a1c;
-  color: var(--mccc-success);
-  border: 1px solid #3dffb555;
-}
-.mccc-chip-demo {
-  background: #2a2210;
-  color: #ffcc66;
-  border: 1px solid #ffcc6655;
-}
-.mccc-chip-dot {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  display: inline-block;
-}
-.mccc-chip-live .mccc-chip-dot { background: var(--mccc-success); box-shadow: 0 0 6px #3dffb5aa; }
-.mccc-chip-demo .mccc-chip-dot { background: #ffcc66; }
-
-.mccc-card {
-  background: var(--mccc-panel);
-  border: 1px solid var(--mccc-border);
-  border-radius: 9px;
-  padding: 0.7rem 0.85rem;
-  margin-bottom: 0.45rem;
-}
-.mccc-card-dense {
-  background: var(--mccc-panel-2);
-  border: 1px solid var(--mccc-border-soft);
-  border-radius: 8px;
-  padding: 0.55rem 0.7rem;
-  margin-bottom: 0.4rem;
-}
-.mccc-metric {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.15rem;
-  color: var(--mccc-accent);
-  line-height: 1.15;
-}
-.mccc-metric-label {
-  color: var(--mccc-muted);
-  font-size: 0.74rem;
-  margin-top: 0.15rem;
-}
-.mccc-metric-delta-up { color: var(--mccc-success); font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; }
-.mccc-metric-delta-down { color: var(--mccc-danger); font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; }
-.mccc-metric-delta-flat { color: var(--mccc-muted); font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; }
-
-.mccc-empty {
-  background: #10161e;
-  border: 1px dashed #2a3848;
-  border-radius: 9px;
-  padding: 0.95rem 1.05rem;
-  text-align: center;
-  color: var(--mccc-muted);
-  margin: 0.4rem 0 0.6rem;
-}
-.mccc-empty strong { color: var(--mccc-text); display: block; margin-bottom: 0.3rem; }
-
-.mccc-error {
-  background: #2a1414;
-  border: 1px solid #5a2020;
-  border-radius: 9px;
-  padding: 0.65rem 0.9rem;
-  color: #ffb0b0;
-  margin: 0.35rem 0 0.55rem;
-  font-size: 0.88rem;
-}
-
-.mccc-kanban {
-  background: #10161e;
-  border: 1px solid var(--mccc-border);
-  border-radius: 8px;
-  padding: 0.5rem 0.6rem;
-  margin-bottom: 0.4rem;
-  min-height: 2.9rem;
-}
-.mccc-kanban .title { color: var(--mccc-text); font-weight: 600; font-size: 0.85rem; }
-.mccc-kanban .meta { color: #8a97a6; font-size: 0.72rem; margin-top: 0.15rem; }
-
-.mccc-list-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid #1a2430;
-  font-size: 0.85rem;
-}
-.mccc-list-row:last-child { border-bottom: none; }
-.mccc-list-row .title { color: var(--mccc-text); font-weight: 500; }
-.mccc-list-row .meta { color: var(--mccc-muted); font-size: 0.75rem; white-space: nowrap; }
-
-.mccc-footer {
-  margin-top: 1.25rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--mccc-border-soft);
-  color: var(--mccc-muted);
-  font-size: 0.75rem;
-}
-.mccc-footer .ver {
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--mccc-accent);
-}
-
-.mccc-quick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0.35rem 0 0.55rem;
-}
-
-/* Tables */
-div[data-testid="stDataFrame"] {
-  border: 1px solid var(--mccc-border-soft);
-  border-radius: 8px;
-  overflow: hidden;
-}
-div[data-testid="stDataFrame"] table {
-  font-size: 0.82rem;
-}
-div[data-testid="stDataFrame"] th {
-  background: #0f141b !important;
-  color: var(--mccc-muted) !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.7rem !important;
-}
-
-/* Sidebar polish */
-div[data-testid="stSidebar"] {
-  background: var(--mccc-bg);
-  border-right: 1px solid var(--mccc-border-soft);
-}
-div[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-  font-size: 0.85rem;
-}
-div[data-testid="stMetricValue"] {
-  font-family: 'JetBrains Mono', monospace;
-}
-
-/* Mobile-friendly tweaks */
-@media (max-width: 768px) {
-  .mccc-hero { padding: 0.8rem 0.9rem; border-radius: 10px; }
-  .mccc-hero h1 { font-size: 1.2rem; }
-  .mccc-card, .mccc-card-dense { padding: 0.55rem 0.65rem; }
-  .mccc-metric { font-size: 1.02rem; }
-  .mccc-list-row { flex-direction: column; gap: 0.15rem; }
-  .mccc-footer { font-size: 0.7rem; }
-}
-</style>
-"""
+CUSTOM_CSS = None  # resolved at inject time via _load_css()
 
 _STATUS_CLASS = {
     "success": "mccc-badge-success",
@@ -325,7 +46,7 @@ _STATUS_CLASS = {
 
 
 def inject_css() -> None:
-    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+    st.markdown(_load_css(), unsafe_allow_html=True)
 
 
 def _pro_unlocked() -> bool:
@@ -340,6 +61,81 @@ def _pro_unlocked() -> bool:
         return is_pro(user_id=uid)
     except Exception:
         return False
+
+
+
+
+def render_support_cta_banner(compact: bool = False) -> None:
+    """Always-accessible, unobtrusive Support CTA (not a blocking modal)."""
+    if compact:
+        st.caption("Support MCCC · voluntary public donations")
+        st.page_link("pages/28_Support_MCCC.py", label="Support MCCC", icon="💜")
+        return
+    st.markdown(
+        '<div class="mccc-card" style="margin:0.35rem 0 0.55rem;">'
+        '<span class="mccc-badge">SUPPORT</span>'
+        '<p style="margin:0.4rem 0 0.25rem;color:#cfd8e3;font-size:0.9rem;">'
+        'MCCC stays independent through voluntary public donations (BTC / ETH / SOL). '
+        'Never a PRO purchase. Never share seeds or private keys.</p>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    st.page_link("pages/28_Support_MCCC.py", label="Open Support MCCC", icon="💜")
+
+
+def maybe_show_support_soft_prompt(page_key: str) -> None:
+    """First-visit delayed soft prompt on Command Center — easy dismiss, never every nav."""
+    try:
+        from mccc.auth import get_session_user
+        from mccc.donations import (
+            DONATION_WARNING,
+            dismiss_donate_prompt,
+            get_donation_channels,
+            should_show_donate_soft_prompt,
+        )
+
+        user = None
+        try:
+            user = get_session_user()
+        except Exception:
+            user = None
+        uid = user.get("id") if user else None
+        if not should_show_donate_soft_prompt(page_key, user_id=uid):
+            return
+
+        # Mark shown so we don't re-open mid-session even before dismiss
+        st.session_state["_mccc_donate_prompt_shown"] = True
+
+        with st.expander("💜 Support MCCC — optional (first visit)", expanded=True):
+            st.caption(
+                "A quiet thank-you prompt after you have started exploring. "
+                "Dismiss anytime — Support stays in the sidebar."
+            )
+            st.info(DONATION_WARNING)
+            channels = get_donation_channels()
+            cols = st.columns(min(3, len(channels) or 1))
+            for col, ch in zip(cols, channels):
+                with col:
+                    st.markdown(f"**{ch.asset}** · {ch.network}")
+                    st.code(ch.address, language=None)
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.page_link("pages/28_Support_MCCC.py", label="Full Support page", icon="💜")
+            with c2:
+                if st.button("Maybe later", key="mccc_donate_soft_later", use_container_width=True):
+                    dismiss_donate_prompt(user_id=uid, durable=False)
+                    st.rerun()
+            with c3:
+                if st.button("Don't show again", type="primary", key="mccc_donate_soft_dismiss", use_container_width=True):
+                    dismiss_donate_prompt(user_id=uid, durable=True)
+                    st.rerun()
+    except Exception:
+        pass
+
+
+# Back-compat alias (old aggressive modal name → soft prompt)
+def maybe_show_support_modal(page_key: str) -> None:
+    maybe_show_support_soft_prompt(page_key)
 
 
 def page_setup(page_key: str, title: str, icon: str = "◆") -> None:
@@ -380,8 +176,8 @@ def page_setup(page_key: str, title: str, icon: str = "◆") -> None:
         unread = 0
 
     with st.sidebar:
-        st.markdown(f"**{APP_NAME}**")
-        st.caption(f"{APP_TAGLINE}")
+        st.markdown("**MCCC**")
+        st.caption("Crypto intelligence terminal")
         st.caption(f"v{__version__}")
         badges = ['<span class="mccc-badge">LOCAL · PRIVACY-FIRST</span>']
         if _pro_unlocked():
@@ -409,26 +205,50 @@ def page_setup(page_key: str, title: str, icon: str = "◆") -> None:
 
 
 def render_sidebar_nav() -> None:
-    """Structured nav — reuses existing pages; Phase N placeholders labelled."""
-    st.caption("Navigate")
-    st.page_link("app.py", label="Command Center", icon="🏠")
-    st.page_link("pages/18_Search.py", label="Search", icon="🔍")
+    """Experience-oriented nav — sparse icons; backends preserved."""
+    from mccc.design_system import NAV_ICONS
+
+    st.markdown('<div class="mccc-nav-group">Command</div>', unsafe_allow_html=True)
+    st.page_link("app.py", label="Dashboard", icon=NAV_ICONS["dashboard"])
+    st.page_link("pages/18_Search.py", label="Explore", icon=NAV_ICONS["explore"])
     st.page_link("pages/24_Intelligence_Center.py", label="Intelligence", icon="🛰️")
-    st.page_link("pages/3_Airdrop_Tracker.py", label="Airdrops", icon="🪂")
     st.page_link("pages/26_Tokens.py", label="Tokens", icon="🪙")
-    st.page_link("pages/4_Wallet_Tracking.py", label="Wallets", icon="👀")
-    st.page_link("pages/27_Calendar.py", label="Calendar", icon="📅")
-    st.page_link("pages/2_Project_Tracker.py", label="Projects", icon="📁")
-    st.page_link("pages/6_Analytics.py", label="Analytics", icon="📊")
-    st.page_link("pages/25_RWA_Intelligence.py", label="RWA", icon="🏛️")
-    st.page_link("pages/8_Education.py", label="Learn", icon="📚")
-    st.page_link("pages/7_AI_Assistant.py", label="Agent", icon="🤖")
+
+    st.markdown('<div class="mccc-nav-group">On-chain</div>', unsafe_allow_html=True)
+    st.page_link("pages/4_Wallet_Tracking.py", label="Wallets", icon=NAV_ICONS["wallets"])
+    st.page_link("pages/32_Chain_Explorers.py", label="On-chain", icon=NAV_ICONS["onchain"])
+    st.page_link("pages/19_Wallet_Directory.py", label="Wallet directory", icon="📒")
+
+    st.markdown('<div class="mccc-nav-group">Research</div>', unsafe_allow_html=True)
+    st.page_link("pages/6_Analytics.py", label="Analytics", icon=NAV_ICONS["analytics"])
+    st.page_link("pages/1_Markets.py", label="Markets", icon="📈")
+    st.page_link("pages/7_AI_Assistant.py", label="AI Analyst", icon=NAV_ICONS["analyst"])
+    st.page_link("pages/2_Project_Tracker.py", label="Projects", icon=NAV_ICONS["projects"])
+    st.page_link("pages/3_Airdrop_Tracker.py", label="Airdrops", icon="🪂")
+    st.page_link("pages/14_Watchlist.py", label="Watchlist", icon=NAV_ICONS["watchlist"])
     st.page_link("pages/15_Notifications.py", label="Alerts", icon="🔔")
+    st.page_link("pages/25_RWA_Intelligence.py", label="RWA", icon="🏛️")
+
+    st.markdown('<div class="mccc-nav-group">Learn</div>', unsafe_allow_html=True)
+    st.page_link("pages/8_Education.py", label="Academy", icon=NAV_ICONS["academy"])
+    st.page_link("pages/17_Start_Here.py", label="Start Crypto", icon="🚀")
     st.page_link("pages/21_Research.py", label="My Research", icon="📝")
-    with st.expander("Coming later (roadmap)", expanded=False):
-        st.caption("Whales — Phase 2/3 · Protocols / Ecosystems deep intel — Phase 4 · Live feed polish — Phase 5")
-        st.page_link("pages/20_Exchange_Directory.py", label="Protocols (exchanges dir · interim)", icon="🏦")
-        st.page_link("pages/14_Watchlist.py", label="Watchlist / alert rules", icon="⭐")
+
+    st.markdown('<div class="mccc-nav-group">Account</div>', unsafe_allow_html=True)
+    st.page_link("pages/16_Account.py", label="Account", icon="👤")
+    st.page_link("pages/28_Support_MCCC.py", label="Support MCCC", icon=NAV_ICONS["support"])
+    st.page_link("pages/10_PRO_Architecture.py", label="PRO", icon="💎")
+
+    with st.expander("More", expanded=False):
+        st.page_link("pages/27_Calendar.py", label="Calendar", icon="📅")
+        st.page_link("pages/20_Exchange_Directory.py", label="Exchanges", icon="🏦")
+        st.page_link("pages/11_Partner_Directory.py", label="Partners", icon="🤝")
+        st.page_link("pages/5_Market_APIs.py", label="Market APIs", icon="🔌")
+        st.page_link("pages/9_User_Analytics.py", label="Usage", icon="📉")
+        st.page_link("pages/29_About.py", label="About", icon="ℹ️")
+        st.page_link("pages/30_Privacy.py", label="Privacy", icon="🔒")
+        st.page_link("pages/31_Terms.py", label="Terms", icon="📜")
+
 
 
 def hero(title: str, subtitle: str = "", show_demo_banner: bool = False) -> None:
@@ -478,6 +298,39 @@ def data_mode_chip(is_live: bool) -> None:
     st.markdown(data_mode_chip_html(is_live), unsafe_allow_html=True)
 
 
+
+def page_shell(
+    what_happened: str,
+    why_it_matters: str,
+    investigate: str,
+    learn_next: str,
+) -> None:
+    """Standard hierarchy strip across major pages."""
+    from mccc.design_system import page_shell_html
+
+    st.markdown(
+        page_shell_html(what_happened, why_it_matters, investigate, learn_next),
+        unsafe_allow_html=True,
+    )
+
+
+def metric_with_explainer(
+    value: str,
+    label: str,
+    explainer: str,
+    *,
+    delta: Optional[str] = None,
+    delta_kind: str = "flat",
+) -> None:
+    """Metric card + beginner explainer under it."""
+    metric_card(value, label, delta=delta, delta_kind=delta_kind)
+    if explainer:
+        st.markdown(
+            f'<div class="mccc-explainer">{html.escape(explainer)}</div>',
+            unsafe_allow_html=True,
+        )
+
+
 def section_header(title: str, subtitle: str = "") -> None:
     sub = f'<div class="sub">{html.escape(subtitle)}</div>' if subtitle else ""
     st.markdown(
@@ -499,6 +352,16 @@ def error_banner(msg: str) -> None:
         f'<div class="mccc-error">{html.escape(msg)}</div>',
         unsafe_allow_html=True,
     )
+
+
+def safe_error(exc: BaseException, *, fallback: str = "Something went wrong. Please try again.") -> None:
+    """User-facing error — never dump raw stack traces."""
+    msg = str(exc).strip() if exc else ""
+    # Avoid leaking internals / long traces
+    if (not msg) or ("Traceback" in msg) or (len(msg) > 280):
+        error_banner(fallback)
+    else:
+        error_banner(msg)
 
 
 def loading(caption: str = "Loading…") -> None:
@@ -601,16 +464,25 @@ def metric_card(
 
 
 def footer(extra: str = "") -> None:
-    """Page footer with package version."""
+    """Page footer with package version + Support / legal links."""
     extra_html = f" · {html.escape(extra)}" if extra else ""
     st.markdown(
         f'<div class="mccc-footer">'
         f'<span class="ver">MCCC v{html.escape(__version__)}</span>'
         f"{extra_html}"
-        f" · local · privacy-first · not financial advice"
+        f" · privacy-first · not financial advice"
         f"</div>",
         unsafe_allow_html=True,
     )
+    fc1, fc2, fc3, fc4 = st.columns(4)
+    with fc1:
+        st.page_link("pages/28_Support_MCCC.py", label="Support MCCC", icon="💜")
+    with fc2:
+        st.page_link("pages/29_About.py", label="About", icon="ℹ️")
+    with fc3:
+        st.page_link("pages/30_Privacy.py", label="Privacy", icon="🔒")
+    with fc4:
+        st.page_link("pages/31_Terms.py", label="Terms", icon="📜")
 
 
 def quick_actions() -> None:
@@ -620,15 +492,18 @@ def quick_actions() -> None:
         st.page_link("pages/18_Search.py", label="Search", icon="🔍")
         st.page_link("pages/24_Intelligence_Center.py", label="Intelligence", icon="🛰️")
     with cols[1]:
+        st.page_link("pages/32_Chain_Explorers.py", label="Explorers", icon="🔗")
         st.page_link("pages/4_Wallet_Tracking.py", label="Wallets", icon="👀")
         st.page_link("pages/26_Tokens.py", label="Tokens", icon="🪙")
     with cols[2]:
         st.page_link("pages/27_Calendar.py", label="Calendar", icon="📅")
         st.page_link("pages/3_Airdrop_Tracker.py", label="Airdrops", icon="🪂")
+        st.page_link("pages/17_Start_Here.py", label="Start Crypto", icon="🚀")
     with cols[3]:
         st.page_link("pages/2_Project_Tracker.py", label="Projects", icon="📁")
         st.page_link("pages/25_RWA_Intelligence.py", label="RWA", icon="🏛️")
-        st.page_link("pages/8_Education.py", label="Learn", icon="📚")
+        st.page_link("pages/8_Education.py", label="Academy", icon="📚")
+        st.page_link("pages/28_Support_MCCC.py", label="Support MCCC", icon="💜")
 
 
 def session_user_id():

@@ -71,8 +71,10 @@ docker compose up --build
 
 ## Existing Render service (do not duplicate)
 
-- **Service ID:** `6b8f3cd7-4f84-4d6a-af1f-b44d1d1cf79c`
-- **Dashboard:** https://dashboard.render.com/web/6b8f3cd7-4f84-4d6a-af1f-b44d1d1cf79c
+- **PRIMARY Service ID:** `srv-dabgrrp5efls73anlhe0`
+- **URL:** https://mananze-crypto-command-center.onrender.com
+- **Dashboard:** https://dashboard.render.com/web/srv-dabgrrp5efls73anlhe0
+- (Legacy connector token UUID `6b8f3cd7-…` may appear in older notes — use PRIMARY id above)
 - Connect repo `MichaelTEE21/mananze-crypto-command-center` branch `main`
 - Env: `MCCC_DATA_DIR=/data`, `MCCC_DB_PATH=/data/mccc.db`
 - Start: Docker `CMD` → `scripts/start.sh` (binds `$PORT`)

@@ -18,9 +18,16 @@ from mccc.assistant import TIPS
 from mccc.auth import get_session_user
 from mccc.db import add_note, init_db, list_notes, list_projects, log_event
 from mccc.subscriptions import has_pro_feature
-from mccc.ui import footer, hero, page_setup, pro_locked_panel, seed_phrase_warning, upgrade_cta
+from mccc.ui import page_shell, footer, hero, page_setup, pro_locked_panel, seed_phrase_warning, upgrade_cta
 
 page_setup("ai_assistant", "AI Assistant")
+page_shell(
+    "Analyst answers from rules and optional LLM — grounded when a report is in session.",
+    "Separates VERIFIED / CALCULATED / INFERENCE / UNAVAILABLE.",
+    "Attach an Intelligence Report context before deep questions.",
+    "Academy for diligence checklists; never paste secrets.",
+)
+
 hero(
     "Research Assistant",
     "Rule-based by default; optional OpenAI-compatible API via AI_API_KEY. "
@@ -61,8 +68,8 @@ with tab_ask:
     )
     use_llm = st.toggle("Try optional LLM if AI_API_KEY set", value=True)
     st.info(
-        "Labels: **FACT** / **DATA** / **ANALYSIS** / **SPECULATION**. "
-        "Secrets are refused. Market numbers come only from market_provider when asked."
+        "Labels: **VERIFIED** / **CALCULATED** / **INFERENCE** / **UNAVAILABLE** (plus FACT/DATA/ANALYSIS/SPECULATION). "
+        "Grounded on retrieved report/explorer data when present. Secrets refused. Market numbers only from market_provider."
     )
     if st.button("Get answer", type="primary") and q.strip():
         result = answer(q, use_llm=use_llm, user_id=uid, report_context=_report_ctx or None)
