@@ -1,29 +1,27 @@
-# MCCC Deploy Ship Notes
+# MCCC Deploy Ship Notes (2026-09-02 SAST)
 
-**Date:** 2026-09-02 (Africa/Johannesburg)
+## Git
+- **HEAD:** `b14470457be8fa4f874ce5b04a202dab15083531`
+- **Commit:** MCCC 2.4.0 Phase 1 + production deploy artifacts (Render-first)
+- **Bundle:** `/workspace/mccc-deploy.bundle` (origin/main..HEAD, 7 commits)
+- **Push:** blocked — `gh`/`git push` not authenticated (ENELO must push)
 
-## Delivered artifacts
+## Artifacts
+Dockerfile (`$PORT`, `MCCC_DATA_DIR=/data`), `.dockerignore`, `docker-compose.yml`,
+`render.yaml` (Docker Blueprint secondary), `railway.toml`, `scripts/start.sh`,
+`runtime.txt`, `packages.txt`, deploy docs + Vercel blocker.
 
-- `Dockerfile` — python:3.12-slim, `MCCC_DATA_DIR=/data`, binds `$PORT`
-- `.dockerignore`
-- `docker-compose.yml` — volume `mccc-data` → `/data`
-- `render.yaml` — Render Blueprint (Docker + `/data` disk)
-- `railway.toml` — secondary
-- `runtime.txt` / `packages.txt` — Streamlit Cloud helpers
-- Docs: `MCCC_DEPLOYMENT_AUDIT.md`, `MCCC_VERCEL_BLOCKER.md`, `DEPLOY.md`
+## Local verification
+- pytest: all green (2.4.0)
+- Streamlit smoke: homepage HTTP 200 + `/_stcore/health` → ok (local :8599)
 
-## Tests / smoke (local)
+## Production URLs
+**None yet — do not invent.**
 
-- pytest: all green after version pin `2.4.0`
-- Streamlit smoke: homepage HTTP 200, `/_stcore/health` → `ok` on `127.0.0.1:8599`
+### Blockers
+1. **Render MCP** returns `unauthorized` — user must Cursor → MCP → Render → **Authenticate**
+2. **GitHub** lacks commit `b144704` — ENELO push `mccc-deploy.bundle` / `git push`
+3. After push + auth: MCP `create_web_service` runtime=python, start `bash scripts/start.sh`
+4. Then Streamlit Community Cloud from **same** repo (no fork) → smoke that URL too
 
-## Production URL
-
-**Not live yet.** Render MCP returned `unauthorized` despite plugin present. No invented URL.
-
-## Exact next user actions
-
-1. **Cursor → Render MCP → Authenticate** (OAuth) until `list_workspaces` succeeds.
-2. **Push** this tree to GitHub (`MichaelTEE21/mananze-crypto-command-center` `main`) via ENELO/`gh`.
-3. Re-run deploy: MCP `create_web_service` (Python) **or** Dashboard Blueprint from `render.yaml`.
-4. Curl the real `*.onrender.com` URL and record it here.
+READY only after each public URL is curl-smoked.
