@@ -15,6 +15,7 @@ from mccc.ai_service import (
     log_ai_usage,
     looks_like_market_question,
     market_context_block,
+    report_context_block,
     research_template,
     rule_based_answer,
 )
@@ -33,6 +34,7 @@ __all__ = [
     "log_ai_usage",
     "looks_like_market_question",
     "market_context_block",
+    "report_context_block",
     "research_template",
     "rule_based_answer",
 ]

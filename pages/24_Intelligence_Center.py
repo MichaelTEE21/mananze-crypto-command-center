@@ -14,6 +14,14 @@ from mccc.db import add_project, init_db
 from mccc.intelligence import DISCLAIMER, IntelligencePipeline, IntelligenceRepository
 from mccc.intelligence.schema import CATEGORY_LABELS, EventCategory, EventStatus
 from mccc.intelligence.source_service import ROBOTS_TOS_STANCE
+from mccc.intelligence.report import REPORT_DISCLAIMER as REPORT_DISCLAIMER_TXT
+from mccc.intelligence.report.engine import ReportEngine
+from mccc.intelligence.report.schema import SUPPORTED_ENTITY_TYPES
+from mccc.intelligence.report.ui_render import (
+    render_journey_strip,
+    render_report,
+    render_security_block,
+)
 from mccc.ui import (
     data_mode_chip,
     demo_callout,
@@ -28,8 +36,8 @@ from mccc.ui import (
 
 page_setup("intelligence_center", "Intelligence Center")
 hero(
-    "What's happening in crypto right now?",
-    "MCCC Intelligence Agent · sourced research signals · not financial advice",
+    "SEARCH → ANALYSE → UNDERSTAND",
+    "MCCC Intelligence Center · sourced signals + Intelligence Reports · not financial advice",
 )
 
 init_db()
@@ -38,10 +46,62 @@ repo = IntelligenceRepository()
 pipeline = IntelligencePipeline()
 pipeline.ensure_ready()
 
+
 st.info(DISCLAIMER)
 demo_callout(
     "DEMO / SYNTHETIC rows are always labelled. Live RSS is optional and never mixed without badges."
 )
+
+tab_analyse, tab_feed = st.tabs(["Analyse · Intelligence Report", "Feed · Sourced events"])
+
+with tab_analyse:
+    render_journey_strip()
+    st.markdown("### ANALYZE A PUBLIC WALLET — or any supported on-chain entity")
+    st.caption(
+        "PASTE A WALLET. SEE THE STORY BEHIND THE ADDRESS. "
+        "Public trail may include transactions, token movements, protocol interactions, and activity over time "
+        "when providers respond. Outcome: help answer “What is this wallet actually doing on-chain?” — not what to buy/sell."
+    )
+    render_security_block()
+    st.caption(REPORT_DISCLAIMER_TXT)
+
+    ent = st.selectbox(
+        "Entity type",
+        ["auto"] + sorted(SUPPORTED_ENTITY_TYPES),
+        help="auto detects wallets/tokens/protocols when possible",
+    )
+    chain = st.selectbox("Chain hint", ["ethereum", "arbitrum", "base", "optimism", "polygon", "solana", "other"])
+    q = st.text_input(
+        "Search the blockchain / research store",
+        placeholder="0x… public address · bitcoin · uniswap · rwa: treasuries · project name",
+        key="intel_report_q",
+    )
+    beginner_mode = st.toggle("Beginner Mode", value=True, key="intel_report_beginner")
+    go = st.button("ANALYSE →", type="primary", key="intel_report_go")
+    if go and q.strip():
+        engine = ReportEngine()
+        hint = None if ent == "auto" else ent
+        with st.spinner("Analysing public / labelled data…"):
+            report = engine.analyse(q.strip(), entity_type_hint=hint, chain=chain)
+        st.session_state["mccc_last_intel_report"] = report
+    report = st.session_state.get("mccc_last_intel_report")
+    if report is not None:
+        render_report(report, beginner_mode=beginner_mode)
+        st.page_link("pages/7_AI_Assistant.py", label="Ask AI about this report", icon="🤖")
+        st.page_link("pages/25_RWA_Intelligence.py", label="Open RWA vertical", icon="🏛️")
+    else:
+        empty_state(
+            "WHAT DO YOU WANT TO UNDERSTAND?",
+            "Search a wallet, token, contract, project, protocol, or RWA entity — then ANALYSE →",
+        )
+
+with tab_feed:
+    st.caption("Sourced research signal feed (Intelligence Agent Phase 1) — engine ≠ chatbot. Scroll sections below.")
+
+# --- Feed (shared below tabs for Phase-1 compatibility) ---
+st.divider()
+st.markdown("#### Feed · What's happening in crypto right now?")
+
 
 with st.expander("Sources & ingestion stance", expanded=False):
     st.caption(ROBOTS_TOS_STANCE)
@@ -241,4 +301,4 @@ if hi:
             st.success("Added")
             st.rerun()
 
-footer("Intelligence Agent Phase 1 · engine is not a chatbot")
+footer("Intelligence Center · Reports + Agent feed · engine is not a chatbot")

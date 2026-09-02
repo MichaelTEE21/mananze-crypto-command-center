@@ -30,15 +30,23 @@ from mccc.watchlist import add_item as add_watch_item
 
 page_setup("wallet_tracking", "Wallet Tracking")
 hero(
-    "Wallet Tracking",
-    "Watch public addresses only. Never enter seed phrases, private keys, or passwords.",
+    "ANALYZE A PUBLIC WALLET",
+    "PASTE A WALLET. SEE THE STORY BEHIND THE ADDRESS. · Public addresses only",
 )
+st.caption(
+    "Public trail: transactions, token movements, protocol interactions, activity over time (when providers respond). "
+    "MCCC does not need control of your wallet to analyse public blockchain activity. "
+    "Helps answer: What is this wallet actually doing on-chain? — not what to buy/sell."
+)
+st.page_link("pages/24_Intelligence_Center.py", label="Open Intelligence Report · ANALYSE →", icon="🛰️")
+
 
 init_db()
 
 st.error(
-    "SECURITY: MCCC will never ask for seed phrases or private keys. "
-    "Only paste public addresses. Anything resembling a secret is rejected and not stored."
+    "PUBLIC ADDRESS ONLY — SECURITY: MCCC will never ask for seed phrases, private keys, "
+    "wallet passwords, or recovery phrases. Only paste public addresses. "
+    "Anything resembling a secret is rejected and not stored."
 )
 st.warning(
     "Do **not** paste: BIP39 recovery phrases, hex private keys, wallet/exchange passwords, "

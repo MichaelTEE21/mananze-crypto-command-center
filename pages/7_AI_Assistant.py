@@ -29,6 +29,21 @@ hero(
 seed_phrase_warning()
 
 init_db()
+_report_ctx = st.session_state.get("mccc_current_report_context") or ""
+_report_meta = st.session_state.get("mccc_current_report") or {}
+if _report_ctx:
+    st.success(
+        "Context-aware of current Intelligence Report: "
+        f"`{_report_meta.get('entity_type', '?')}` · {_report_meta.get('display_name', '')} · "
+        f"mode={_report_meta.get('data_mode')} · confidence={_report_meta.get('confidence')}"
+    )
+    with st.expander("Report context sent to assistant (labelled)", expanded=False):
+        st.code(_report_ctx, language="text")
+    st.caption("Assistant must not invent missing chain data beyond this context.")
+else:
+    st.caption("No Intelligence Report in session — analyse one in Intelligence Center for grounded answers.")
+    st.page_link("pages/24_Intelligence_Center.py", label="Open Intelligence Center · Analyse", icon="🛰️")
+
 user = get_session_user()
 uid = user.get("id") if user else None
 
@@ -50,9 +65,11 @@ with tab_ask:
         "Secrets are refused. Market numbers come only from market_provider when asked."
     )
     if st.button("Get answer", type="primary") and q.strip():
-        result = answer(q, use_llm=use_llm, user_id=uid)
+        result = answer(q, use_llm=use_llm, user_id=uid, report_context=_report_ctx or None)
         mode = result.get("mode", "rule_based")
         prov = result.get("provider", mode)
+        if result.get("report_grounded"):
+            st.caption("Answer grounded on current Intelligence Report context.")
         if mode == "refusal":
             st.error(result["answer"])
         elif mode == "llm":

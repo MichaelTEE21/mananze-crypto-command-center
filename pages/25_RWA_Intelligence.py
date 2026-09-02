@@ -44,6 +44,8 @@ hero(
     TOP_LEVEL_CATEGORY,
     "Disclosure-based research signals · not financial advice · not trading/custody",
 )
+st.page_link("pages/24_Intelligence_Center.py", label="Intelligence Report · Analyse RWA entity", icon="🛰️")
+st.caption("RWA vertical preserved — use entity type RWA in Intelligence Center Analyse.")
 
 init_db()
 uid = session_user_id()

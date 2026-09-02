@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.3.0 — Intelligence Report (Search → Analyse → Understand)
+
+- Add **Intelligence Report** engine under `src/mccc/intelligence/report/` (Providers → Normalisation → Analytics → Report → Education)
+- Supported entities: Project | Token | Wallet/public address | Protocol | Contract | RWA
+- 10 required sections: executive summary through confidence/data quality; DEMO/LIVE honesty; neutral risk language
+- Intelligence Center Analyse tab + journey strip; Search / Wallet Tracking UX copy (public-address-only)
+- Report observation store for “What changed?”; AI Assistant grounded on current report context
+- Metric explainers (TVL etc.); Beginner Mode vs Advanced Mode
+- Docs: `docs/INTELLIGENCE_REPORT_PLAN.md`, `docs/INTELLIGENCE_REPORT_SHIP.md`
+- Tests: `tests/test_intelligence_report.py`
+- Deploy: Streamlit local / Cloud — **not** Vercel-as-is (honest blocker documented)
+
+
 ## 2.2.0 — RWA Intelligence Phase 1
 
 - Add **RWA — REAL-WORLD ASSETS** vertical (MCCC only; Technocore untouched)

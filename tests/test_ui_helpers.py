@@ -26,7 +26,7 @@ def test_data_mode_chip_html():
 
 
 def test_version_present():
-    assert __version__ == "2.2.0"
+    assert __version__ == "2.3.0"
 
 
 def test_list_published_announcements(db_path):

@@ -13,9 +13,19 @@ from mccc.ui import empty_state, hero, page_setup, footer
 
 page_setup("search", "Search")
 hero(
-    "Search",
-    "Find projects, airdrops, wallets, exchanges, education, resources, notes, RWA, and intelligence.",
+    "SEARCH THE BLOCKCHAIN",
+    "WHAT DO YOU WANT TO UNDERSTAND? · Journey: Search → Analyse → Understand",
 )
+st.caption(
+    "Search a wallet, token, contract, project, or supported on-chain entity in the local research store. "
+    "For a full Intelligence Report, continue in Intelligence Center → Analyse."
+)
+st.error(
+    "PUBLIC ADDRESS ONLY when searching wallets — never seed phrases, private keys, passwords, or recovery phrases. "
+    "MCCC does not need control of your wallet to analyse public blockchain activity."
+)
+st.page_link("pages/24_Intelligence_Center.py", label="ANALYSE → Intelligence Report", icon="🛰️")
+
 
 if "mccc_recent_searches" not in st.session_state:
     st.session_state["mccc_recent_searches"] = []
@@ -32,7 +42,7 @@ if recent:
 q = st.text_input(
     "Query",
     value=st.session_state.get("mccc_search_q", ""),
-    placeholder="bridge, DEMO, ethereum…",
+    placeholder="wallet 0x… · bitcoin · uniswap · rwa · project name…",
 ).strip()
 st.session_state["mccc_search_q"] = q
 
@@ -43,7 +53,7 @@ cats = st.multiselect(
 )
 
 if not q:
-    empty_state("Type to search", "Matches name, notes, chain, address, lesson titles, resources, notes.")
+    empty_state("WHAT DO YOU WANT TO UNDERSTAND?", "Matches name, notes, chain, public address, lessons, resources, RWA, intelligence — then ANALYSE →")
     st.stop()
 
 # Record recent (dedupe, cap 8)
@@ -116,5 +126,13 @@ for cat in cats:
             st.markdown(
                 f"**{e.get('title')}** · `{e.get('category')}` · {e.get('project')}{demo}"
             )
+
+if q:
+    st.divider()
+    st.markdown("### Continue journey")
+    st.caption("Search → Analyse → Understand")
+    if st.button("ANALYSE →", type="primary", key="search_analyse_cta"):
+        st.session_state["intel_report_q"] = q
+        st.switch_page("pages/24_Intelligence_Center.py")
 
 footer("Search")

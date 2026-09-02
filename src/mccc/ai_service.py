@@ -91,6 +91,19 @@ def market_context_block() -> str:
         return _label("DATA", f"Live quotes: {UNAVAILABLE} (market_provider error).")
 
 
+
+def report_context_block(report_context: str | None = None) -> str:
+    """Labelled block from current Intelligence Report — never invent beyond it."""
+    ctx = (report_context or "").strip()
+    if not ctx:
+        return _label(
+            "DATA",
+            "No current Intelligence Report in context. Open Intelligence Center → Analyse first. "
+            "Do not invent on-chain numbers.",
+        )
+    return _label("DATA", "Current Intelligence Report context (do not invent beyond this):\n" + ctx)
+
+
 def research_template(topic: str, context: str = "") -> dict[str, Any]:
     """Structured research note with explicit uncertainty markers."""
     base = structure_research_note(topic, context)
@@ -297,10 +310,11 @@ def answer(
     use_llm: bool = True,
     user_id: Optional[int] = None,
     db_path: Optional[Path] = None,
+    report_context: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Main entry: refuse secrets; try optional LLM if AI_API_KEY set; else rule-based."""
+    """Main entry: refuse secrets; optional report grounding; LLM if AI_API_KEY else rule-based."""
     q = (query or "").strip()
-    if contains_secrets(q):
+    if contains_secrets(q) or contains_secrets(report_context or ""):
         log_ai_usage("refusal", 0, user_id=user_id, db_path=db_path)
         return {
             "mode": "refusal",
@@ -311,8 +325,24 @@ def answer(
             "tips": [],
         }
 
+    grounded = q
+    ctx_block = report_context_block(report_context)
+    if report_context and str(report_context).strip():
+        grounded = (
+            f"{q}\n\n---\nUse ONLY the following Intelligence Report context for on-chain/market claims. "
+            f"If a field is DATA UNAVAILABLE, say so — never invent.\n{ctx_block}"
+        )
+
     provider = get_assistant_provider(prefer_llm=use_llm)
-    result = provider.answer(q)
+    result = provider.answer(grounded)
+    # Always surface report grounding note on rule-based path when context present
+    if report_context and str(report_context).strip() and result.get("mode") == "rule_based":
+        result = dict(result)
+        result["answer"] = ctx_block + "\n\n" + str(result.get("answer") or "")
+        result["report_grounded"] = True
+    elif report_context and str(report_context).strip():
+        result = dict(result)
+        result["report_grounded"] = True
     mode = result.get("mode", "rule_based")
     if mode == "refusal":
         log_ai_usage("refusal", 0, user_id=user_id, db_path=db_path)
