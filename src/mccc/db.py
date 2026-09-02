@@ -327,6 +327,26 @@ CREATE TABLE IF NOT EXISTS app_settings (
 );
 
 CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(event_type);
+CREATE TABLE IF NOT EXISTS calendar_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    event_type TEXT NOT NULL DEFAULT 'important',
+    event_date TEXT NOT NULL,
+    end_date TEXT DEFAULT '',
+    entity_type TEXT DEFAULT '',
+    entity_ref TEXT DEFAULT '',
+    project_id INTEGER,
+    airdrop_id INTEGER,
+    description TEXT DEFAULT '',
+    source TEXT DEFAULT '',
+    data_quality TEXT DEFAULT 'UNKNOWN',
+    is_demo INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_calendar_events_date ON calendar_events(event_date);
+CREATE INDEX IF NOT EXISTS idx_calendar_events_type ON calendar_events(event_type);
+
 CREATE INDEX IF NOT EXISTS idx_analytics_events_page ON analytics_events(page_key);
 """
 
@@ -580,6 +600,25 @@ def _migrate_schema(conn: sqlite3.Connection) -> None:
         value TEXT DEFAULT '',
         updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS calendar_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        event_type TEXT NOT NULL DEFAULT 'important',
+        event_date TEXT NOT NULL,
+        end_date TEXT DEFAULT '',
+        entity_type TEXT DEFAULT '',
+        entity_ref TEXT DEFAULT '',
+        project_id INTEGER,
+        airdrop_id INTEGER,
+        description TEXT DEFAULT '',
+        source TEXT DEFAULT '',
+        data_quality TEXT DEFAULT 'UNKNOWN',
+        is_demo INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_calendar_events_date ON calendar_events(event_date);
+    CREATE INDEX IF NOT EXISTS idx_calendar_events_type ON calendar_events(event_type);
     """)
 
 
@@ -626,6 +665,11 @@ def init_db(db_path: Optional[Path] = None) -> None:
         from mccc.intelligence.rwa.service import RWAService
 
         RWAService(db_path).seed_demo_if_empty()
+    except Exception:
+        pass
+    try:
+        ensure_calendar_schema(db_path)
+        seed_demo_calendar_events(db_path)
     except Exception:
         pass
 
@@ -1041,3 +1085,190 @@ def list_settings(db_path: Optional[Path] = None) -> dict[str, str]:
     with connect(db_path) as conn:
         rows = conn.execute("SELECT key, value FROM app_settings ORDER BY key").fetchall()
         return {r["key"]: r["value"] for r in rows}
+
+# --- Calendar events (Phase 1 foundation) ---
+
+CALENDAR_EVENT_TYPES = (
+    "airdrop",
+    "unlock",
+    "burn",
+    "project",
+    "governance",
+    "important",
+)
+
+
+def ensure_calendar_schema(db_path: Optional[Path] = None) -> None:
+    """Idempotent calendar_events table (also created via SCHEMA / migrate)."""
+    with connect(db_path) as conn:
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS calendar_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                event_type TEXT NOT NULL DEFAULT 'important',
+                event_date TEXT NOT NULL,
+                end_date TEXT DEFAULT '',
+                entity_type TEXT DEFAULT '',
+                entity_ref TEXT DEFAULT '',
+                project_id INTEGER,
+                airdrop_id INTEGER,
+                description TEXT DEFAULT '',
+                source TEXT DEFAULT '',
+                data_quality TEXT DEFAULT 'UNKNOWN',
+                is_demo INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_calendar_events_date ON calendar_events(event_date);
+            CREATE INDEX IF NOT EXISTS idx_calendar_events_type ON calendar_events(event_type);
+            """
+        )
+
+
+def add_calendar_event(
+    title: str,
+    event_type: str,
+    event_date: str,
+    *,
+    end_date: str = "",
+    entity_type: str = "",
+    entity_ref: str = "",
+    project_id: Optional[int] = None,
+    airdrop_id: Optional[int] = None,
+    description: str = "",
+    source: str = "",
+    data_quality: str = "UNKNOWN",
+    is_demo: bool = False,
+    db_path: Optional[Path] = None,
+) -> int:
+    ensure_calendar_schema(db_path)
+    now = utc_now()
+    et = (event_type or "important").strip().lower()
+    if et not in CALENDAR_EVENT_TYPES:
+        et = "important"
+    with connect(db_path) as conn:
+        cur = conn.execute(
+            """INSERT INTO calendar_events (
+                title, event_type, event_date, end_date, entity_type, entity_ref,
+                project_id, airdrop_id, description, source, data_quality, is_demo,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                title.strip(),
+                et,
+                event_date.strip(),
+                end_date or "",
+                entity_type or "",
+                entity_ref or "",
+                project_id,
+                airdrop_id,
+                description or "",
+                source or "",
+                data_quality or "UNKNOWN",
+                1 if is_demo else 0,
+                now,
+                now,
+            ),
+        )
+        return int(cur.lastrowid)
+
+
+def list_calendar_events(
+    *,
+    event_type: Optional[str] = None,
+    month: Optional[str] = None,
+    include_demo: bool = True,
+    limit: int = 200,
+    db_path: Optional[Path] = None,
+) -> list[dict[str, Any]]:
+    ensure_calendar_schema(db_path)
+    clauses: list[str] = []
+    params: list[Any] = []
+    if event_type:
+        clauses.append("event_type = ?")
+        params.append(event_type.strip().lower())
+    if month:
+        # YYYY-MM prefix match on event_date
+        clauses.append("event_date LIKE ?")
+        params.append(f"{month.strip()}%")
+    if not include_demo:
+        clauses.append("is_demo = 0")
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+    params.append(limit)
+    with connect(db_path) as conn:
+        rows = conn.execute(
+            f"SELECT * FROM calendar_events{where} ORDER BY event_date ASC, id ASC LIMIT ?",
+            params,
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_calendar_event(event_id: int, db_path: Optional[Path] = None) -> Optional[dict[str, Any]]:
+    ensure_calendar_schema(db_path)
+    with connect(db_path) as conn:
+        row = conn.execute("SELECT * FROM calendar_events WHERE id=?", (event_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_calendar_event(event_id: int, db_path: Optional[Path] = None) -> None:
+    ensure_calendar_schema(db_path)
+    with connect(db_path) as conn:
+        conn.execute("DELETE FROM calendar_events WHERE id=?", (event_id,))
+
+
+def seed_demo_calendar_events(db_path: Optional[Path] = None) -> int:
+    """Seed a few labelled DEMO calendar rows when table is empty. Returns count inserted."""
+    ensure_calendar_schema(db_path)
+    with connect(db_path) as conn:
+        n = conn.execute("SELECT COUNT(*) AS c FROM calendar_events").fetchone()["c"]
+        if n and int(n) > 0:
+            return 0
+    demos = [
+        {
+            "title": "DEMO · Sample governance vote window",
+            "event_type": "governance",
+            "event_date": "2026-09-15",
+            "end_date": "2026-09-22",
+            "description": "Labelled DEMO placeholder — not a real on-chain vote.",
+            "source": "DEMO seed",
+            "data_quality": "UNVERIFIED",
+            "entity_type": "protocol",
+            "entity_ref": "uniswap",
+        },
+        {
+            "title": "DEMO · Research checkpoint (project)",
+            "event_type": "project",
+            "event_date": "2026-09-10",
+            "description": "DEMO placeholder for calendar Month/List views.",
+            "source": "DEMO seed",
+            "data_quality": "UNVERIFIED",
+            "entity_type": "project",
+            "entity_ref": "demo-project",
+        },
+        {
+            "title": "DEMO · Important research date",
+            "event_type": "important",
+            "event_date": "2026-09-30",
+            "description": "DEMO — unlocks/burns/airdrops populate in later phases with sourced feeds.",
+            "source": "DEMO seed",
+            "data_quality": "UNVERIFIED",
+        },
+    ]
+    inserted = 0
+    for d in demos:
+        add_calendar_event(
+            d["title"],
+            d["event_type"],
+            d["event_date"],
+            end_date=d.get("end_date", ""),
+            entity_type=d.get("entity_type", ""),
+            entity_ref=d.get("entity_ref", ""),
+            description=d.get("description", ""),
+            source=d.get("source", "DEMO seed"),
+            data_quality=d.get("data_quality", "UNVERIFIED"),
+            is_demo=True,
+            db_path=db_path,
+        )
+        inserted += 1
+    return inserted

@@ -1,4 +1,4 @@
-"""Global search — projects, airdrops, wallets, exchanges, education, resources, notes."""
+"""Universal Search — entity chips + route ANALYSE into Intelligence Report."""
 from __future__ import annotations
 
 import sys
@@ -9,23 +9,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import streamlit as st
 
 from mccc.search import SEARCH_CATEGORIES, search_all
-from mccc.ui import empty_state, hero, page_setup, footer
+from mccc.universal_search import (
+    ENTITY_CHIPS,
+    analyse_session_payload,
+    detect_search_entity,
+    homepage_search_placeholder,
+    unified_search_results,
+)
+from mccc.ui import empty_state, footer, hero, page_setup, section_header, status_badge
 
 page_setup("search", "Search")
 hero(
-    "SEARCH THE BLOCKCHAIN",
-    "WHAT DO YOU WANT TO UNDERSTAND? · Journey: Search → Analyse → Understand",
+    "SEARCH",
+    "One search · wallet · token · contract · project · protocol · airdrop · Journey: Search → Analyse → Understand",
 )
-st.caption(
-    "Search a wallet, token, contract, project, or supported on-chain entity in the local research store. "
-    "For a full Intelligence Report, continue in Intelligence Center → Analyse."
-)
+st.caption("No crypto jargon required upfront. Entity type is detected automatically when possible.")
 st.error(
     "PUBLIC ADDRESS ONLY when searching wallets — never seed phrases, private keys, passwords, or recovery phrases. "
     "MCCC does not need control of your wallet to analyse public blockchain activity."
 )
-st.page_link("pages/24_Intelligence_Center.py", label="ANALYSE → Intelligence Report", icon="🛰️")
-
 
 if "mccc_recent_searches" not in st.session_state:
     st.session_state["mccc_recent_searches"] = []
@@ -42,28 +44,74 @@ if recent:
 q = st.text_input(
     "Query",
     value=st.session_state.get("mccc_search_q", ""),
-    placeholder="wallet 0x… · bitcoin · uniswap · rwa · project name…",
+    placeholder=homepage_search_placeholder(),
 ).strip()
 st.session_state["mccc_search_q"] = q
 
+chip_filter = st.multiselect(
+    "Entity type chips (filter typed hits)",
+    list(ENTITY_CHIPS),
+    default=list(ENTITY_CHIPS),
+)
 cats = st.multiselect(
-    "Categories",
+    "Local store categories",
     list(SEARCH_CATEGORIES),
     default=list(SEARCH_CATEGORIES),
 )
 
 if not q:
-    empty_state("WHAT DO YOU WANT TO UNDERSTAND?", "Matches name, notes, chain, public address, lessons, resources, RWA, intelligence — then ANALYSE →")
+    empty_state(
+        "WHAT DO YOU WANT TO UNDERSTAND?",
+        "Search a wallet (0x…), $TICKER, project name, protocol, or airdrop — then ANALYSE →",
+    )
     st.stop()
 
-# Record recent (dedupe, cap 8)
+detected = detect_search_entity(q)
+if detected.rejected_secret:
+    st.error(detected.error)
+    st.stop()
+
+# Record recent
 prev = [x for x in recent if x.lower() != q.lower()]
 st.session_state["mccc_recent_searches"] = ([q] + prev)[:8]
 
-results = search_all(q, categories=cats or list(SEARCH_CATEGORIES))
+section_header("Detected entity", "FACT of detection is best-effort — verify before acting")
+if detected.ok:
+    status_badge(detected.chip, "info")
+    st.markdown(
+        f"**Type:** `{detected.entity_type}` · **Normalised:** `{detected.normalized}`"
+    )
+    for w in detected.warnings:
+        st.caption(w)
+else:
+    st.warning(detected.error or "Could not classify — still searching local store.")
 
+c1, c2 = st.columns(2)
+with c1:
+    if st.button("ANALYSE", type="primary", key="search_analyse_cta"):
+        if not detected.ok:
+            st.error(detected.error or "Cannot analyse this input.")
+        else:
+            for k, v in analyse_session_payload(detected).items():
+                st.session_state[k] = v
+            st.switch_page("pages/24_Intelligence_Center.py")
+with c2:
+    st.page_link("pages/24_Intelligence_Center.py", label="Open Intelligence Center", icon="🛰️")
+
+unified = unified_search_results(q)
+typed = [h for h in unified["typed_hits"] if h["chip"] in chip_filter]
+st.subheader(f"Typed hits ({len(typed)})")
+if not typed:
+    st.caption("No typed hits for selected chips.")
+else:
+    for h in typed[:40]:
+        status_badge(h["chip"], "info")
+        st.markdown(f"**{h['title']}** · {h.get('subtitle') or ''}")
+
+st.divider()
+results = search_all(q, categories=cats or list(SEARCH_CATEGORIES))
 total = sum(len(v) for v in results.values())
-st.caption(f"{total} hit(s) across {len(cats)} categor{'y' if len(cats)==1 else 'ies'}")
+st.caption(f"{total} category hit(s) across {len(cats)} categor{'y' if len(cats)==1 else 'ies'}")
 
 for cat in cats:
     hits = results.get(cat) or []
@@ -110,8 +158,6 @@ for cat in cats:
                 st.markdown((n.get("body") or "")[:2000])
                 if n.get("project_id"):
                     st.caption(f"project_id={n['project_id']}")
-
-
     elif cat == "rwa":
         for r in hits[:25]:
             demo = " · DEMO / SYNTHETIC" if r.get("is_demo") else ""
@@ -126,13 +172,5 @@ for cat in cats:
             st.markdown(
                 f"**{e.get('title')}** · `{e.get('category')}` · {e.get('project')}{demo}"
             )
-
-if q:
-    st.divider()
-    st.markdown("### Continue journey")
-    st.caption("Search → Analyse → Understand")
-    if st.button("ANALYSE →", type="primary", key="search_analyse_cta"):
-        st.session_state["intel_report_q"] = q
-        st.switch_page("pages/24_Intelligence_Center.py")
 
 footer("Search")

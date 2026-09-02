@@ -1,0 +1,29 @@
+# Render Blueprint — MCCC (Streamlit)
+# PRIMARY production host for Phase 1.
+# Parent/ENELO: push GitHub, then Blueprint sync or Web Service from Dockerfile.
+#
+# Persistent disk at /data so SQLite survives deploys.
+services:
+  - type: web
+    name: mccc
+    runtime: docker
+    plan: free
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: MCCC_DATA_DIR
+        value: /data
+      - key: MCCC_DB_PATH
+        value: /data/mccc.db
+      - key: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+        value: "false"
+      - key: MCCC_PRO_UNLOCK
+        value: "0"
+      - key: MCCC_DEV
+        value: "0"
+      # Optional secrets — set in Render dashboard (never commit real values):
+      # COINGECKO_API_KEY, ETHERSCAN_API_KEY, AI_API_KEY, AI_API_BASE, AI_MODEL
+      # AUTH_SECRET, MCCC_ADMIN_PASSWORD, MCCC_BOOTSTRAP_ADMIN_EMAIL
+    disk:
+      name: mccc-data
+      mountPath: /data
+      sizeGB: 1

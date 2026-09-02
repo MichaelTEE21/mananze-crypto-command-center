@@ -403,7 +403,32 @@ def page_setup(page_key: str, title: str, icon: str = "◆") -> None:
         except Exception:
             pass
         st.divider()
+        render_sidebar_nav()
+        st.divider()
         st.caption("B=MananzeZA · never stores seeds / private keys")
+
+
+def render_sidebar_nav() -> None:
+    """Structured nav — reuses existing pages; Phase N placeholders labelled."""
+    st.caption("Navigate")
+    st.page_link("app.py", label="Command Center", icon="⬡")
+    st.page_link("pages/18_Search.py", label="Search", icon="🔍")
+    st.page_link("pages/24_Intelligence_Center.py", label="Intelligence", icon="🛰️")
+    st.page_link("pages/3_Airdrop_Tracker.py", label="Airdrops", icon="🪂")
+    st.page_link("pages/26_Tokens.py", label="Tokens", icon="🪙")
+    st.page_link("pages/4_Wallet_Tracking.py", label="Wallets", icon="👀")
+    st.page_link("pages/27_Calendar.py", label="Calendar", icon="📅")
+    st.page_link("pages/2_Project_Tracker.py", label="Projects", icon="📁")
+    st.page_link("pages/6_Analytics.py", label="Analytics", icon="📊")
+    st.page_link("pages/25_RWA_Intelligence.py", label="RWA", icon="🏛️")
+    st.page_link("pages/8_Education.py", label="Learn", icon="📚")
+    st.page_link("pages/7_AI_Assistant.py", label="Agent", icon="🤖")
+    st.page_link("pages/15_Notifications.py", label="Alerts", icon="🔔")
+    st.page_link("pages/21_Research.py", label="My Research", icon="📝")
+    with st.expander("Coming later (roadmap)", expanded=False):
+        st.caption("Whales — Phase 2/3 · Protocols / Ecosystems deep intel — Phase 4 · Live feed polish — Phase 5")
+        st.page_link("pages/20_Exchange_Directory.py", label="Protocols (exchanges dir · interim)", icon="🏦")
+        st.page_link("pages/14_Watchlist.py", label="Watchlist / alert rules", icon="⭐")
 
 
 def hero(title: str, subtitle: str = "", show_demo_banner: bool = False) -> None:
@@ -592,18 +617,18 @@ def quick_actions() -> None:
     """Hub quick links to key multipage destinations."""
     cols = st.columns(4)
     with cols[0]:
-        st.page_link("pages/2_Project_Tracker.py", label="Add Project", icon="📁")
-        st.page_link("pages/3_Airdrop_Tracker.py", label="Add Airdrop", icon="🪂")
-    with cols[1]:
-        st.page_link("pages/4_Wallet_Tracking.py", label="Add Wallet", icon="👀")
         st.page_link("pages/18_Search.py", label="Search", icon="🔍")
-    with cols[2]:
-        st.page_link("pages/8_Education.py", label="Learn", icon="📚")
-        st.page_link("pages/7_AI_Assistant.py", label="Ask AI", icon="🤖")
-    with cols[3]:
-        st.page_link("pages/13_Portfolio.py", label="Portfolio", icon="💼")
         st.page_link("pages/24_Intelligence_Center.py", label="Intelligence", icon="🛰️")
+    with cols[1]:
+        st.page_link("pages/4_Wallet_Tracking.py", label="Wallets", icon="👀")
+        st.page_link("pages/26_Tokens.py", label="Tokens", icon="🪙")
+    with cols[2]:
+        st.page_link("pages/27_Calendar.py", label="Calendar", icon="📅")
+        st.page_link("pages/3_Airdrop_Tracker.py", label="Airdrops", icon="🪂")
+    with cols[3]:
+        st.page_link("pages/2_Project_Tracker.py", label="Projects", icon="📁")
         st.page_link("pages/25_RWA_Intelligence.py", label="RWA", icon="🏛️")
+        st.page_link("pages/8_Education.py", label="Learn", icon="📚")
 
 
 def session_user_id():

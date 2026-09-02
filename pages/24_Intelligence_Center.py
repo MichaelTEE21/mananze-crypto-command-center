@@ -65,9 +65,13 @@ with tab_analyse:
     render_security_block()
     st.caption(REPORT_DISCLAIMER_TXT)
 
+    _hint_opts = ["auto"] + sorted(SUPPORTED_ENTITY_TYPES)
+    _sess_hint = st.session_state.get("mccc_analyse_entity_hint", "auto")
+    _hint_idx = _hint_opts.index(_sess_hint) if _sess_hint in _hint_opts else 0
     ent = st.selectbox(
         "Entity type",
-        ["auto"] + sorted(SUPPORTED_ENTITY_TYPES),
+        _hint_opts,
+        index=_hint_idx,
         help="auto detects wallets/tokens/protocols when possible",
     )
     chain = st.selectbox("Chain hint", ["ethereum", "arbitrum", "base", "optimism", "polygon", "solana", "other"])

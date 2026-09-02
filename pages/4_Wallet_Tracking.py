@@ -157,9 +157,16 @@ else:
     rows = balance_rows_for_address(w["address"], w["chain"])
     st.markdown(f"**Balances for `{w['address']}`**")
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-    if st.button("Remove from watchlist"):
-        delete_wallet(w["id"])
-        st.warning("Removed.")
-        st.rerun()
+    a1, a2 = st.columns(2)
+    with a1:
+        if st.button("ANALYSE public wallet →", type="primary", key="wallet_analyse_selected"):
+            st.session_state["intel_report_q"] = w["address"]
+            st.session_state["mccc_analyse_entity_hint"] = "wallet"
+            st.switch_page("pages/24_Intelligence_Center.py")
+    with a2:
+        if st.button("Remove from watchlist"):
+            delete_wallet(w["id"])
+            st.warning("Removed.")
+            st.rerun()
 
 footer("Wallet Tracking")

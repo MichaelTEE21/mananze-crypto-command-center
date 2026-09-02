@@ -1,11 +1,13 @@
 # MANANZE CRYPTO COMMAND CENTER (MCCC)
 
-**The operating system for a crypto researcher.**
+**DON'T JUST WATCH CRYPTO. UNDERSTAND IT.**
+
+Search. Analyse. Learn. Monitor. Act.
 
 Premium local Streamlit dashboard for crypto intelligence & education.
 Built for **B=MananzeZA**. Never stores seed phrases, private keys, or passwords.
 
-**Version:** `2.3.0`
+**Version:** `2.4.0`
 
 ## What works out of the box
 
@@ -25,6 +27,9 @@ Built for **B=MananzeZA**. Never stores seed phrases, private keys, or passwords
 | Search / Research / Bookmarks / Resources | Works |
 | Intelligence Center | Works — sourced events + **Intelligence Reports**; DEMO labelled |
 | Intelligence Report | Works — wallet/token/project/protocol/contract/RWA; Search→Analyse→Understand |
+| Universal Search / Command Center front door | Works — entity chips + ANALYSE → Report |
+| Token Intelligence | Works — market sourced; holders/tokenomics/locks UNAVAILABLE (Phase 2) |
+| Calendar | Works — schema + Month/List + DEMO seeds (live feeds Phase 2–3) |
 | RWA Intelligence | Works — profiles, disclosure framework, DEMO seeds |
 
 ## What needs keys (optional)
@@ -140,6 +145,31 @@ Central SQLite `partner_links` + `partner_link_clicks` (no IP / UA / PII).
 - Assistant defaults to rule-based unless `AI_API_KEY` is set.
 - Fear & Greed unavailable until a reliable free feed is wired.
 - Hosted multi-tenant hardening is out of scope for local 2.0.0.
+
+
+## Deployment (production)
+
+MCCC is a **long-running Streamlit** app (not a Vercel serverless function). Full audit: `docs/MCCC_DEPLOYMENT_AUDIT.md`. Host guide: `docs/DEPLOY.md`. Vercel blocker: `docs/MCCC_VERCEL_BLOCKER.md`.
+
+### Quick paths
+
+| Path | Status |
+|------|--------|
+| **Render (preferred)** | `render.yaml` Blueprint or MCP `create_web_service` (Python) — volume/disk at `/data` |
+| **Docker** | `Dockerfile` + `docker-compose.yml` — `docker compose up --build` |
+| **Streamlit Community Cloud** | One-click: connect GitHub → Main file `app.py` → Deploy |
+| **Vercel** | **Not supported** for Streamlit without a full rewrite (see docs) |
+
+```bash
+# Local prod-sim
+cp .env.example .env
+docker compose up --build
+# Health: curl http://localhost:8501/_stcore/health
+```
+
+**Persistence:** SQLite at `data/mccc.db`. On hosts, mount a durable volume at `/data` (`MCCC_DATA_DIR`). `DATABASE_URL` is ignored until a Postgres adapter exists.
+
+**DEMO vs LIVE:** CoinGecko LIVE when reachable; otherwise labelled DEMO. Never invent live prices.
 
 ## Changelog
 

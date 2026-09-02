@@ -85,6 +85,7 @@ else:
     st.dataframe(show, use_container_width=True, hide_index=True)
 
 st.info("For raw API tinkering see **Market APIs** (stage 5). Prices are never silently invented.")
+st.page_link("pages/26_Tokens.py", label="Token Intelligence", icon="🪙")
 st.page_link("pages/5_Market_APIs.py", label="Open Market APIs (slim)", icon="🔌")
 
 footer("Markets")

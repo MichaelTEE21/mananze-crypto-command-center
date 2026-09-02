@@ -1,0 +1,11 @@
+# Railway config — deploy Dockerfile from repo root.
+# User must: Railway → New Project → Deploy from GitHub → select this repo.
+# Set a volume mounted at /app/data for SQLite persistence.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/_stcore/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"

@@ -1,5 +1,5 @@
 """MANANZE CRYPTO COMMAND CENTER — core package."""
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 APP_NAME = "MANANZE CRYPTO COMMAND CENTER"
-APP_TAGLINE = "The operating system for a crypto researcher"
+APP_TAGLINE = "DON'T JUST WATCH CRYPTO. UNDERSTAND IT."

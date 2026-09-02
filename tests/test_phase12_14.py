@@ -34,7 +34,7 @@ from mccc import __version__
 
 
 def test_version_is_release():
-    assert __version__ == "2.3.0"
+    assert __version__ == "2.4.0"
 
 
 def test_change_password_scrypt(db_path):

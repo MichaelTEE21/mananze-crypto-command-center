@@ -28,6 +28,11 @@ from mccc.notifications import list_notifications, unread_count
 from mccc.partners import SEED_PHRASE_WARNING, list_partner_links
 from mccc.portfolio import compute_summary, list_assets
 from mccc.services.market import get_default_provider
+from mccc.universal_search import (
+    analyse_session_payload,
+    detect_search_entity,
+    homepage_search_placeholder,
+)
 from mccc.ui import (
     affiliate_disclosure_short,
     data_mode_chip,
@@ -110,13 +115,71 @@ def _fmt_mcap(mcap) -> str:
 page_setup("command_center", "Command Center")
 
 hero(
-    APP_NAME,
-    f"{APP_TAGLINE} · local research OS · v{__version__}",
+    "MCCC",
+    "DON'T JUST WATCH CRYPTO. UNDERSTAND IT. · v" + __version__,
+)
+st.markdown(
+    '<p style="color:#9aa7b5;letter-spacing:0.12em;font-size:0.85rem;margin:0.2rem 0 0.85rem;">'
+    "Search. Analyse. Learn. Monitor. Act."
+    "</p>",
+    unsafe_allow_html=True,
 )
 
 init_db()
 uid = session_user_id()
 provider = get_default_provider()
+
+# --- Universal Search / ANALYSE front door ---
+section_header("Command Center", "Universal search → Intelligence Report")
+_q_default = st.session_state.get("mccc_home_q", st.session_state.get("mccc_search_q", ""))
+home_q = st.text_input(
+    "Universal search",
+    value=_q_default,
+    placeholder=homepage_search_placeholder(),
+    key="mccc_home_search_input",
+    label_visibility="collapsed",
+).strip()
+st.session_state["mccc_home_q"] = home_q
+c_a, c_b, c_c = st.columns((2, 1, 1))
+with c_a:
+    analyse_clicked = st.button("ANALYSE", type="primary", use_container_width=True, key="home_analyse")
+with c_b:
+    search_clicked = st.button("Search", use_container_width=True, key="home_search")
+with c_c:
+    st.page_link("pages/24_Intelligence_Center.py", label="Intelligence Center", icon="🛰️")
+
+if analyse_clicked:
+    if not home_q:
+        st.warning("Enter a wallet, token, contract, project, protocol, or airdrop to analyse.")
+    else:
+        detected = detect_search_entity(home_q)
+        if detected.rejected_secret:
+            st.error(detected.error)
+        elif not detected.ok:
+            st.error(detected.error or "Could not understand that query.")
+        else:
+            for k, v in analyse_session_payload(detected).items():
+                st.session_state[k] = v
+            st.switch_page("pages/24_Intelligence_Center.py")
+elif search_clicked:
+    if not home_q:
+        st.info("Type something to search the local research store.")
+    else:
+        st.session_state["mccc_search_q"] = home_q
+        st.switch_page("pages/18_Search.py")
+
+if home_q:
+    _det = detect_search_entity(home_q)
+    if _det.ok:
+        st.caption(
+            f"Detected · **{_det.chip}** (`{_det.entity_type}`) · normalised `{_det.normalized}`"
+        )
+    elif _det.rejected_secret:
+        st.error(_det.error)
+
+st.caption(
+    f"{APP_NAME} · {APP_TAGLINE} · public data & labelled DEMO only · not financial advice"
+)
 
 # --- Market snapshot ---
 section_header("Market snapshot", "BTC / ETH / SOL · mcap & dominance when available")

@@ -1,0 +1,31 @@
+# Local production simulation — Streamlit + persistent SQLite at /data
+services:
+  mccc:
+    build: .
+    ports:
+      - "${PORT:-8501}:8501"
+    environment:
+      PORT: "8501"
+      MCCC_DATA_DIR: /data
+      COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_API_BASE: ${AI_API_BASE:-https://api.openai.com/v1}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      MCCC_ADMIN_PASSWORD: ${MCCC_ADMIN_PASSWORD:-}
+      MCCC_BOOTSTRAP_ADMIN_EMAIL: ${MCCC_BOOTSTRAP_ADMIN_EMAIL:-}
+      MCCC_PRO_UNLOCK: ${MCCC_PRO_UNLOCK:-0}
+      MCCC_DEV: ${MCCC_DEV:-0}
+    volumes:
+      - mccc-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8501/_stcore/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mccc-data:

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.4.0 — Phase 1 Foundation (Command Center · Universal Search · Calendar · Tokens)
+
+- Command Center front door: hero, universal search, **ANALYSE** CTA, philosophy line
+- `universal_search.py` — entity detection (0x / $TICKER / names), chips, Analyse routing into Intelligence Report
+- Navigation sidebar structure + Tokens (`26_Tokens.py`) + Calendar (`27_Calendar.py`)
+- Token Intelligence foundation (`token_intel.py`) — market via providers; holders/tokenomics/locks = DATA UNAVAILABLE
+- Wallet Tracking ANALYSE CTA → report engine; public-address-only unchanged
+- `calendar_events` schema + DEMO seeds + Month/List filters + intel click-through hooks
+- Docs: `docs/MCCC_MASTER_PLAN.md`, `docs/MCCC_MASTER_PHASE1_SHIP.md`
+- Production: `Dockerfile` + `.dockerignore` + `MCCC_DATA_DIR` / `MCCC_DB_PATH`; Vercel blocker documented honestly
+- Tests: `tests/test_phase1_foundation.py`
+
 ## 2.3.0 — Intelligence Report (Search → Analyse → Understand)
 
 - Add **Intelligence Report** engine under `src/mccc/intelligence/report/` (Providers → Normalisation → Analytics → Report → Education)
