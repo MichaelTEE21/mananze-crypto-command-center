@@ -1,25 +1,25 @@
 # Render Blueprint — MCCC (Streamlit)
-# Free plan: NO persistent disk (disks require paid). SQLite is ephemeral across deploys.
-# Optional: upgrade plan + attach disk at /data later.
+# PRIMARY: existing service 6b8f3cd7-4f84-4d6a-af1f-b44d1d1cf79c (do not duplicate).
+# Docker + /data disk for SQLite persistence. Disks require a paid plan on NEW free
+# services; keep this config for the EXISTING disk-backed service.
 services:
   - type: web
     name: mccc
-    runtime: python
+    runtime: docker
     plan: free
-    region: oregon
-    buildCommand: pip install -r requirements.txt
-    startCommand: bash scripts/start.sh
     healthCheckPath: /_stcore/health
     envVars:
       - key: MCCC_DATA_DIR
-        value: /opt/render/project/src/data
+        value: /data
       - key: MCCC_DB_PATH
-        value: /opt/render/project/src/data/mccc.db
-      - key: PYTHON_VERSION
-        value: "3.12.8"
+        value: /data/mccc.db
       - key: STREAMLIT_BROWSER_GATHER_USAGE_STATS
         value: "false"
       - key: MCCC_PRO_UNLOCK
         value: "0"
       - key: MCCC_DEV
         value: "0"
+    disk:
+      name: mccc-data
+      mountPath: /data
+      sizeGB: 1

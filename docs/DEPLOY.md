@@ -68,3 +68,13 @@ After Render OAuth works (`list_workspaces` not `unauthorized`) and GitHub has l
 docker compose up --build
 # http://localhost:8501
 ```
+
+## Existing Render service (do not duplicate)
+
+- **Service ID:** `6b8f3cd7-4f84-4d6a-af1f-b44d1d1cf79c`
+- **Dashboard:** https://dashboard.render.com/web/6b8f3cd7-4f84-4d6a-af1f-b44d1d1cf79c
+- Connect repo `MichaelTEE21/mananze-crypto-command-center` branch `main`
+- Env: `MCCC_DATA_DIR=/data`, `MCCC_DB_PATH=/data/mccc.db`
+- Start: Docker `CMD` → `scripts/start.sh` (binds `$PORT`)
+- Health: `/_stcore/health`
+- Secrets only in Render dashboard (never git)
