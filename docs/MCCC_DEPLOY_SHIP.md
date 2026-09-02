@@ -1,9 +1,9 @@
 # MCCC Deploy Ship Notes (2026-09-02 SAST)
 
 ## Git
-- **HEAD:** `3ace35e602ed94bfc8144ecfc5e90483c33f2703`
+- **HEAD:** `136e2923a990c3e2e1308c4a58f4093580cb2ff7`
 - **Commit:** MCCC 2.4.0 Phase 1 + production deploy artifacts (Render-first)
-- **Bundle:** `/workspace/mccc-deploy.bundle` (origin/main..HEAD)
+- **Bundle:** `/workspace/mccc-phase1-2.4.0.bundle` (origin/main..HEAD)
 - **Push:** blocked — `gh`/`git push` not authenticated (ENELO must push)
 
 ## Artifacts
@@ -12,7 +12,7 @@ Dockerfile (`$PORT`, `MCCC_DATA_DIR=/data`), `.dockerignore`, `docker-compose.ym
 `runtime.txt`, `packages.txt`, deploy docs + Vercel blocker.
 
 ## Local verification
-- pytest: all green (2.4.0)
+- pytest: **174 passed** (2.4.0)
 - Streamlit smoke: homepage HTTP 200 + `/_stcore/health` → ok (local :8599)
 
 ## Production URLs

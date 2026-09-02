@@ -2,7 +2,7 @@
 
 ## Commit
 
-- **SHA:** _(filled after local commit)_
+- **SHA:** `136e2923a990c3e2e1308c4a58f4093580cb2ff7` (`136e292`)
 - **Version:** `2.4.0`
 - **Branch:** `main` (ahead of origin; parent/ENELO pushes)
 - **Bundle:** `/workspace/mccc-phase1-2.4.0.bundle` (for ENELO)
@@ -23,8 +23,13 @@
 
 ## Tests
 
-- Full `pytest -q` — see count in final report.
+- Full `pytest -q`: **174 passed**.
 - New: `tests/test_phase1_foundation.py` (entity detection, wallet public-only, calendar schema, token placeholders, version).
+
+## Dual-deploy (same repo — no fork)
+
+1. **Render PRIMARY** after ENELO push
+2. **Streamlit Community Cloud SECOND** from same `main` / `app.py`
 
 ## Deploy / production status (honest — no invented URL)
 
