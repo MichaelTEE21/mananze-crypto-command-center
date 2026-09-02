@@ -59,4 +59,6 @@ cd /workspace/mccc
 
 ## Commit
 
-See git SHA after local commit (do not push).
+- SHA: `c4b4cf13bc10d420db1a8aff87c737668c7d6cf1` (`c4b4cf1`)
+- Branch: `main` ahead of origin by 1 — **not pushed**
+- Tests: **114 passed**
