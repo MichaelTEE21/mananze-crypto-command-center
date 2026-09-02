@@ -187,12 +187,15 @@ def render_event_card(ev, key_prefix: str) -> None:
                 st.rerun()
 
 
+st.page_link("pages/25_RWA_Intelligence.py", label="Open RWA — Real-World Assets Intelligence", icon="🏛️")
+
 SECTION_SPECS = [
     ("Breaking", EventCategory.BREAKING.value),
     ("New Projects", EventCategory.NEW_PROJECTS.value),
     ("Funding", EventCategory.FUNDING.value),
     ("Airdrop Signals", EventCategory.AIRDROP_SIGNALS.value),
     ("Token Events", EventCategory.TOKEN_EVENTS.value),
+    ("RWA — Real-World Assets", EventCategory.RWA.value),
 ]
 for title, cat in SECTION_SPECS:
     section_header(title, "Sourced events · ranked by importance")

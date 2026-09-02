@@ -5,9 +5,17 @@ import re
 from typing import Optional
 
 from mccc.intelligence.schema import EventCategory, RawDocument
+from mccc.intelligence.rwa.classification import RWAClassificationService
 
 
 _RULES: list[tuple[str, list[re.Pattern[str]]]] = [
+    (
+        EventCategory.RWA.value,
+        [
+            re.compile(r"\b(rwa|real[\s-]?world\s+asset|tokeniz(?:e|ed|ation)|tokenized\s+(?:treasury|treasuries|real\s+estate|credit|gold|bond|fund))\b", re.I),
+            re.compile(r"\b(private\s+credit|on[\s-]?chain\s+treasury|t[\s-]?bill)\b", re.I),
+        ],
+    ),
     (
         EventCategory.FUNDING.value,
         [
@@ -54,15 +62,28 @@ _RULES: list[tuple[str, list[re.Pattern[str]]]] = [
 
 
 class ClassificationService:
+    def __init__(self) -> None:
+        self._rwa = RWAClassificationService()
+
     def classify(self, doc: RawDocument) -> tuple[str, str]:
         """Return (category, subcategory). Prefer meta hint if valid; else rules; else technology."""
         hint = str((doc.meta or {}).get("category_hint") or "").strip().lower()
         valid = {c.value for c in EventCategory}
+        rwa = self._rwa.classify(doc)
+        sub_hint = str((doc.meta or {}).get("subcategory") or "").strip()
         if hint in valid:
-            return hint, str((doc.meta or {}).get("subcategory") or "")
+            if hint == EventCategory.RWA.value:
+                sub = sub_hint or rwa.rwa_category or str((doc.meta or {}).get("rwa_category") or "")
+                return hint, sub
+            return hint, sub_hint
+        # RWA membership wins over generic technology when signals fire
+        if rwa.is_rwa:
+            return EventCategory.RWA.value, rwa.rwa_category or sub_hint
         blob = f"{doc.title}\n{doc.body}"
         for category, patterns in _RULES:
             for pat in patterns:
                 if pat.search(blob):
-                    return category, ""
+                    if category == EventCategory.RWA.value:
+                        return category, rwa.rwa_category or sub_hint
+                    return category, sub_hint
         return EventCategory.TECHNOLOGY.value, ""

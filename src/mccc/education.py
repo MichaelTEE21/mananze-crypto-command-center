@@ -100,6 +100,52 @@ LESSON_META: dict[str, dict[str, Any]] = {
             "agent": "Software that acts semi-autonomously; never give it seed/private keys.",
         },
     },
+    # RWA (Real-World Assets) — INTERMEDIATE education vertical
+    "rwa_tokenization": {
+        "category": "INTERMEDIATE",
+        "related": ["rwa_treasuries", "rwa_private_credit", "rwa_risks"],
+        "glossary": {
+            "RWA": "Real-world asset — off-chain value represented via on-chain claims.",
+            "tokenization": "Mapping an asset/claim to a ledger token; legal wrapper matters.",
+        },
+    },
+    "rwa_treasuries": {
+        "category": "INTERMEDIATE",
+        "related": ["rwa_tokenization", "rwa_settlement", "rwa_risks"],
+        "glossary": {"tokenized treasury": "On-chain claim designed to track treasury exposure — verify issuer docs."},
+    },
+    "rwa_private_credit": {
+        "category": "INTERMEDIATE",
+        "related": ["rwa_tokenization", "rwa_collateral", "rwa_risks"],
+    },
+    "rwa_real_estate": {
+        "category": "INTERMEDIATE",
+        "related": ["rwa_tokenization", "rwa_custody", "rwa_risks"],
+    },
+    "rwa_custody": {
+        "category": "INTERMEDIATE",
+        "related": ["rwa_settlement", "rwa_collateral", "rwa_risks"],
+        "glossary": {"custody": "Who holds the underlying asset/cash and under what controls."},
+    },
+    "rwa_collateral": {
+        "category": "INTERMEDIATE",
+        "related": ["rwa_private_credit", "rwa_redemption", "rwa_risks"],
+    },
+    "rwa_redemption": {
+        "category": "INTERMEDIATE",
+        "related": ["rwa_settlement", "rwa_custody", "rwa_risks"],
+    },
+    "rwa_settlement": {
+        "category": "INTERMEDIATE",
+        "related": ["rwa_custody", "rwa_tokenization", "rwa_risks"],
+    },
+    "rwa_risks": {
+        "category": "INTERMEDIATE",
+        "related": ["rwa_tokenization", "rwa_custody", "rwa_redemption"],
+        "glossary": {
+            "disclosure indicator": "DISCLOSED / NOT DISCLOSED / UNKNOWN — not a buy/sell rating.",
+        },
+    },
 }
 
 # Simple knowledge-check banks keyed by lesson. Kept short; not graded inventively.
@@ -178,6 +224,27 @@ QUIZ_BANK: dict[str, list[dict[str, Any]]] = {
         {
             "q": "Fake support asking for a seed is:",
             "choices": ["Normal onboarding", "A common scam — refuse", "Required for LIVE mode"],
+            "answer": 1,
+        }
+    ],
+    "rwa_tokenization": [
+        {
+            "q": "Tokenization always means you legally own the off-chain asset?",
+            "choices": ["Yes, always", "No — legal wrappers/custody/jurisdiction matter", "Only if labelled DEMO"],
+            "answer": 1,
+        }
+    ],
+    "rwa_risks": [
+        {
+            "q": "MCCC RWA risk framework uses:",
+            "choices": ["Buy/sell ratings", "Disclosure indicators (DISCLOSED / NOT DISCLOSED / UNKNOWN)", "Guaranteed yields"],
+            "answer": 1,
+        }
+    ],
+    "rwa_treasuries": [
+        {
+            "q": "A calculated estimate of tokenized asset value should be labelled:",
+            "choices": ["TVL", "Calculated estimate (not TVL)", "Verified price target"],
             "answer": 1,
         }
     ],

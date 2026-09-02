@@ -29,6 +29,7 @@ class EventCategory(str, Enum):
     TOKEN_EVENTS = "token_events"
     TECHNOLOGY = "technology"
     NARRATIVES = "narratives"
+    RWA = "rwa"
 
 
 class Confidence(str, Enum):
@@ -75,6 +76,7 @@ CATEGORY_LABELS = {
     EventCategory.TOKEN_EVENTS.value: "Token Events",
     EventCategory.TECHNOLOGY.value: "Technology",
     EventCategory.NARRATIVES.value: "Narratives",
+    EventCategory.RWA.value: "RWA — Real-World Assets",
 }
 
 UNKNOWN = "Unknown"

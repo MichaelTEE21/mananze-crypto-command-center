@@ -96,4 +96,32 @@ else:
     pro_locked_panel("Multi-series analytics & export")
     upgrade_cta("Advanced analytics export requires PRO (Coming Soon payments).")
 
+
+st.divider()
+st.subheader("RWA analytics (stored profiles)")
+try:
+    from mccc.intelligence.rwa.service import RWAService
+
+    rwa_summary = RWAService().analytics()
+    if rwa_summary.get("demo"):
+        demo_callout(f"RWA data mode: {rwa_summary.get('data_mode')} — DEMO seeds labelled.")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("RWA profiles", rwa_summary.get("total", 0))
+    c2.metric("DEMO", rwa_summary.get("demo", 0))
+    c3.metric("Live", rwa_summary.get("live", 0))
+    if rwa_summary.get("by_category"):
+        cdf = pd.DataFrame(
+            [{"category": k, "count": v} for k, v in rwa_summary["by_category"].items()]
+        )
+        fig_rwa = px.bar(
+            cdf, x="category", y="count",
+            title="RWA profiles by category (stored)",
+            template="plotly_dark",
+        )
+        fig_rwa.update_layout(paper_bgcolor="#0b0f14", plot_bgcolor="#141a22")
+        st.plotly_chart(fig_rwa, use_container_width=True)
+    st.page_link("pages/25_RWA_Intelligence.py", label="Open RWA Intelligence", icon="🏛️")
+except Exception as exc:  # noqa: BLE001
+    st.caption(f"RWA analytics unavailable: {exc}")
+
 footer("Analytics")

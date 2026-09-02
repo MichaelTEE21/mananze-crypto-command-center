@@ -14,7 +14,7 @@ from mccc.ui import empty_state, hero, page_setup, footer
 page_setup("search", "Search")
 hero(
     "Search",
-    "Find projects, airdrops, wallets, exchanges, education, resources, and research notes.",
+    "Find projects, airdrops, wallets, exchanges, education, resources, notes, RWA, and intelligence.",
 )
 
 if "mccc_recent_searches" not in st.session_state:
@@ -100,5 +100,21 @@ for cat in cats:
                 st.markdown((n.get("body") or "")[:2000])
                 if n.get("project_id"):
                     st.caption(f"project_id={n['project_id']}")
+
+
+    elif cat == "rwa":
+        for r in hits[:25]:
+            demo = " · DEMO / SYNTHETIC" if r.get("is_demo") else ""
+            name = r.get("display_name") or r.get("project_name")
+            st.markdown(
+                f"**{name}** · `{r.get('rwa_category')}` · {r.get('blockchain')}{demo}"
+            )
+            st.caption((r.get("description") or "")[:160])
+    elif cat == "intelligence":
+        for e in hits[:25]:
+            demo = " · DEMO" if e.get("is_demo") else ""
+            st.markdown(
+                f"**{e.get('title')}** · `{e.get('category')}` · {e.get('project')}{demo}"
+            )
 
 footer("Search")

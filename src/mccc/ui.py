@@ -603,6 +603,7 @@ def quick_actions() -> None:
     with cols[3]:
         st.page_link("pages/13_Portfolio.py", label="Portfolio", icon="💼")
         st.page_link("pages/24_Intelligence_Center.py", label="Intelligence", icon="🛰️")
+        st.page_link("pages/25_RWA_Intelligence.py", label="RWA", icon="🏛️")
 
 
 def session_user_id():

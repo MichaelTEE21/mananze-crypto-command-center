@@ -36,6 +36,8 @@ from mccc.intelligence.scoring_service import ScoringService
 from mccc.intelligence.source_service import SourceService
 from mccc.intelligence.summarization_service import SummarizationService
 from mccc.intelligence.demo_feed import DEMO_NARRATIVES
+from mccc.intelligence.rwa.service import RWAService
+from mccc.intelligence.rwa.classification import RWAClassificationService
 
 
 @dataclass
@@ -65,9 +67,12 @@ class IntelligencePipeline:
         self.extractor = ExtractionService()
         self.scorer = ScoringService()
         self.summarizer = SummarizationService()
+        self.rwa = RWAService(db_path)
+        self.rwa_classifier = RWAClassificationService()
 
     def ensure_ready(self) -> None:
         self.repo.ensure_schema()
+        self.rwa.ensure_ready()
         for s in self.sources.list_sources():
             self.repo.upsert_source_row(
                 s.key, s.name, int(s.tier), s.source_type,
@@ -81,7 +86,7 @@ class IntelligencePipeline:
         include_demo: bool = True,
         include_live_rss: bool = False,
         source_keys: Optional[Sequence[str]] = None,
-        limit_per_source: int = 15,
+        limit_per_source: int = 25,
     ) -> PipelineResult:
         self.ensure_ready()
         keys = list(source_keys) if source_keys else [s.key for s in self.sources.list_sources(enabled_only=True)]
@@ -213,6 +218,29 @@ class IntelligencePipeline:
                         )
                     )
 
+                # RWA vertical: classify + link profile (never auto-VERIFIED)
+                rwa_cls = self.rwa_classifier.classify(doc)
+                if category == EventCategory.RWA.value or rwa_cls.is_rwa:
+                    if not event.tags:
+                        event.tags = []
+                    if "rwa" not in [t.lower() for t in event.tags]:
+                        event.tags = list(event.tags) + ["rwa"]
+                        self.repo.upsert_event(event)
+                    sub = subcategory or rwa_cls.rwa_category
+                    if sub and not event.subcategory:
+                        event.subcategory = sub
+                        self.repo.upsert_event(event)
+                    self.rwa.upsert_from_event(
+                        project_name=extracted.project,
+                        rwa_category=sub or rwa_cls.rwa_category,
+                        blockchain=extracted.blockchain,
+                        event_id=event.id,
+                        rwa_event_type=rwa_cls.rwa_event_type,
+                        is_demo=doc.is_demo,
+                        source_url=doc.source_url,
+                        description=summary or doc.title,
+                    )
+
             # Seed DEMO narratives once if empty
             if include_demo and not self.repo.list_narratives(limit=1):
                 for n in DEMO_NARRATIVES:
@@ -241,6 +269,11 @@ class IntelligencePipeline:
     def seed_demo_if_empty(self) -> PipelineResult:
         """Idempotent DEMO seed for offline UI — never presents as live."""
         self.ensure_ready()
+        # Always ensure RWA DEMO profiles exist (separate table; labelled)
+        try:
+            self.rwa.seed_demo_if_empty()
+        except Exception:
+            pass
         if self.repo.count_events(is_demo=True) > 0:
             return PipelineResult(run_id="skipped", stored=0)
         return self.run(include_demo=True, include_live_rss=False)

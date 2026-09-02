@@ -622,6 +622,12 @@ def init_db(db_path: Optional[Path] = None) -> None:
         IntelligencePipeline(db_path).seed_demo_if_empty()
     except Exception:
         pass
+    try:
+        from mccc.intelligence.rwa.service import RWAService
+
+        RWAService(db_path).seed_demo_if_empty()
+    except Exception:
+        pass
 
 
 def _seed_feature_flags(conn: sqlite3.Connection) -> None:

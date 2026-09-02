@@ -17,6 +17,8 @@ SEARCH_CATEGORIES = (
     "education",
     "resources",
     "notes",
+    "rwa",
+    "intelligence",
 )
 
 
@@ -126,6 +128,62 @@ def search_notes(q: str, db_path: Optional[Path] = None, limit: int = 25) -> lis
     return hits[:limit]
 
 
+
+def search_rwa(q: str, db_path: Optional[Path] = None, limit: int = 25) -> list[dict[str, Any]]:
+    """RWA profiles — DEMO labelled in results when is_demo."""
+    try:
+        from mccc.intelligence.rwa.service import RWAService
+
+        svc = RWAService(db_path)
+        svc.ensure_ready()
+        return svc.search(q, limit=limit)
+    except Exception:
+        return []
+
+
+def search_intelligence(q: str, db_path: Optional[Path] = None, limit: int = 25) -> list[dict[str, Any]]:
+    """Intelligence events including RWA category."""
+    needle = (q or "").strip().lower()
+    if not needle:
+        return []
+    try:
+        from mccc.intelligence.repository import IntelligenceRepository
+
+        repo = IntelligenceRepository(db_path)
+        repo.ensure_schema()
+        events = repo.list_events(limit=200)
+        out = []
+        for ev in events:
+            hay = " ".join(
+                [
+                    ev.title or "",
+                    ev.summary or "",
+                    ev.project or "",
+                    ev.category or "",
+                    ev.subcategory or "",
+                    " ".join(ev.tags or []),
+                ]
+            ).lower()
+            if needle in hay:
+                out.append(
+                    {
+                        "id": ev.id,
+                        "title": ev.title,
+                        "category": ev.category,
+                        "subcategory": ev.subcategory,
+                        "project": ev.project,
+                        "is_demo": ev.is_demo,
+                        "confidence": ev.confidence,
+                        "source_url": ev.source_url,
+                    }
+                )
+            if len(out) >= limit:
+                break
+        return out
+    except Exception:
+        return []
+
+
 def search_all(
     q: str,
     categories: Optional[Iterable[str]] = None,
@@ -143,6 +201,8 @@ def search_all(
         "education": lambda: search_education(q, limit=limit_per),
         "resources": lambda: search_resources(q, db_path=db_path, limit=limit_per),
         "notes": lambda: search_notes(q, db_path=db_path, limit=limit_per),
+        "rwa": lambda: search_rwa(q, db_path=db_path, limit=limit_per),
+        "intelligence": lambda: search_intelligence(q, db_path=db_path, limit=limit_per),
     }
     for cat in cats:
         if cat in dispatch:

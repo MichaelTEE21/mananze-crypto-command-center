@@ -5,7 +5,7 @@
 Premium local Streamlit dashboard for crypto intelligence & education.
 Built for **B=MananzeZA**. Never stores seed phrases, private keys, or passwords.
 
-**Version:** `2.1.0`
+**Version:** `2.2.0`
 
 ## What works out of the box
 
@@ -23,6 +23,8 @@ Built for **B=MananzeZA**. Never stores seed phrases, private keys, or passwords
 | PRO Architecture | Soft gates + flags — **payments Coming Soon** (never faked) |
 | Admin + Diagnostics | Admin password / `is_admin`; Diagnostics when `MCCC_DEV=1` |
 | Search / Research / Bookmarks / Resources | Works |
+| Intelligence Center | Works — sourced events; DEMO labelled |
+| RWA Intelligence | Works — profiles, disclosure framework, DEMO seeds |
 
 ## What needs keys (optional)
 

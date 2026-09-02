@@ -1,6 +1,6 @@
 """MCCC Intelligence Agent — discovery/structuring engine (not a chatbot).
 
-Phase 1 foundation: modular pipeline INGEST→NORMALIZE→DEDUPE→CLASSIFY→EXTRACT
+Phase 1 foundation + RWA vertical: modular pipeline INGEST→NORMALIZE→DEDUPE→CLASSIFY→EXTRACT
 →SCORE→SUMMARIZE→STORE, SQLite repository (production-swappable), DEMO/LIVE
 separation, and Intelligence Center UI over sourced events.
 """

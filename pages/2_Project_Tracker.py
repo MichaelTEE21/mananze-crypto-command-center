@@ -68,7 +68,7 @@ with st.expander("Add project", expanded=False):
         stage = c4.selectbox("Stage", list(PROJECT_STAGES), index=1)
         description = st.text_area("Description", placeholder="What is this project?")
         c5, c6, c7 = st.columns(3)
-        category = c5.text_input("Category", placeholder="L2 / DeFi / Infra…")
+        category = c5.text_input("Category", placeholder="L2 / DeFi / Infra / RWA…")
         priority = c6.slider("Priority (1=highest)", 1, 5, 3)
         personal_rating = c7.slider("Personal rating (0–5)", 0, 5, 0)
         c8, c9, c10 = st.columns(3)

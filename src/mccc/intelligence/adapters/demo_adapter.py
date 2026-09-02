@@ -11,4 +11,10 @@ from mccc.intelligence.adapters.base import BaseAdapter
 class DemoAdapter(BaseAdapter):
     def fetch(self, limit: int = 20) -> Sequence[RawDocument]:
         docs = list(DEMO_RAW_DOCUMENTS)
+        try:
+            from mccc.intelligence.rwa.demo_seed import build_demo_raw_documents
+
+            docs.extend(build_demo_raw_documents())
+        except Exception:
+            pass
         return docs[: max(0, limit)]

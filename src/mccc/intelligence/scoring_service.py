@@ -27,6 +27,7 @@ _CATEGORY_BASE = {
     EventCategory.NEW_PROJECTS.value: 45,
     EventCategory.TECHNOLOGY.value: 50,
     EventCategory.NARRATIVES.value: 40,
+    EventCategory.RWA.value: 55,
 }
 
 

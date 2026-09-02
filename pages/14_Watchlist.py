@@ -171,4 +171,22 @@ else:
             st.warning("Bookmark removed.")
             st.rerun()
 
+
+st.divider()
+st.subheader("RWA watchlist")
+try:
+    from mccc.intelligence.rwa.service import RWAService
+
+    _rwa = RWAService()
+    _rwa.ensure_ready()
+    _items = _rwa.repo.list_watch(user_id=session_user_id(), limit=20)
+    if not _items:
+        st.caption("No RWA follows yet — add from RWA Intelligence.")
+    else:
+        for w in _items:
+            st.write(f"`{w.get('ref_type')}` → **{w.get('ref_id')}** — {w.get('notes') or ''}")
+    st.page_link("pages/25_RWA_Intelligence.py", label="Open RWA Intelligence", icon="🏛️")
+except Exception as exc:  # noqa: BLE001
+    st.caption(f"RWA watchlist unavailable: {exc}")
+
 footer("Watchlist")

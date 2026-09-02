@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.2.0 — RWA Intelligence Phase 1
+
+- Add **RWA — REAL-WORLD ASSETS** vertical (MCCC only; Technocore untouched)
+- Taxonomy + extensible categories/event types; `rwa_profiles` / `rwa_profile_events` / `rwa_watchlist`
+- Intelligence Agent extension: classify RWA signals; pipeline links profiles; DEMO seeds labelled
+- `pages/25_RWA_Intelligence.py` — sections, filters, cards, disclosure risk framework, narratives
+- Global Search (`rwa`, `intelligence`), Analytics RWA chart, Education `rwa_*.md` modules
+- Asset values: verified reported | calculated estimate (**not TVL**) | unavailable + stale timestamps
+- Docs: `docs/RWA_PLAN.md`, `docs/RWA_PHASE1_REPORT.md`
+- Tests: `tests/test_rwa_phase1.py`
+
 ## 2.1.0 — Intelligence Agent Phase 1
 
 - Add MCCC Intelligence Agent foundation (engine ≠ chatbot): modular pipeline INGEST→NORMALIZE→DEDUPE→CLASSIFY→EXTRACT→SCORE→SUMMARIZE→STORE
