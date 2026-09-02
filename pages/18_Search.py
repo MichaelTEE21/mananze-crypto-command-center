@@ -1,4 +1,4 @@
-"""Global search across projects, airdrops, wallets, education."""
+"""Global search — projects, airdrops, wallets, exchanges, education, resources, notes."""
 from __future__ import annotations
 
 import sys
@@ -8,59 +8,97 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mccc.db import list_airdrops, list_projects, list_wallets
-from mccc.paths import EDUCATION_DIR, ensure_dirs
-from mccc.ui import empty_state, hero, page_setup
+from mccc.search import SEARCH_CATEGORIES, search_all
+from mccc.ui import empty_state, hero, page_setup, footer
 
 page_setup("search", "Search")
-hero("Search", "Find projects, airdrops, wallets, and education lessons.")
+hero(
+    "Search",
+    "Find projects, airdrops, wallets, exchanges, education, resources, and research notes.",
+)
 
-q = st.text_input("Query", placeholder="bridge, DEMO, ethereum…").strip().lower()
+if "mccc_recent_searches" not in st.session_state:
+    st.session_state["mccc_recent_searches"] = []
+
+recent = st.session_state["mccc_recent_searches"]
+if recent:
+    st.caption("Recent searches (this session)")
+    cols = st.columns(min(5, len(recent)))
+    for i, rq in enumerate(recent[:5]):
+        if cols[i].button(rq, key=f"recent_{i}"):
+            st.session_state["mccc_search_q"] = rq
+            st.rerun()
+
+q = st.text_input(
+    "Query",
+    value=st.session_state.get("mccc_search_q", ""),
+    placeholder="bridge, DEMO, ethereum…",
+).strip()
+st.session_state["mccc_search_q"] = q
+
+cats = st.multiselect(
+    "Categories",
+    list(SEARCH_CATEGORIES),
+    default=list(SEARCH_CATEGORIES),
+)
 
 if not q:
-    empty_state("Type to search", "Matches name, notes, chain, address, and lesson titles.")
+    empty_state("Type to search", "Matches name, notes, chain, address, lesson titles, resources, notes.")
     st.stop()
 
-projects = [p for p in list_projects() if q in " ".join(str(v) for v in p.values()).lower()]
-airdrops = [a for a in list_airdrops() if q in " ".join(str(v) for v in a.values()).lower()]
-wallets = [w for w in list_wallets() if q in " ".join(str(v) for v in w.values()).lower()]
+# Record recent (dedupe, cap 8)
+prev = [x for x in recent if x.lower() != q.lower()]
+st.session_state["mccc_recent_searches"] = ([q] + prev)[:8]
 
-ensure_dirs()
-lessons = []
-for path in sorted(EDUCATION_DIR.glob("*.md")):
-    text = path.read_text(encoding="utf-8")
-    if q in path.stem.lower() or q in text.lower():
-        lessons.append(path)
+results = search_all(q, categories=cats or list(SEARCH_CATEGORIES))
 
-st.subheader(f"Projects ({len(projects)})")
-if not projects:
-    st.caption("No project hits.")
-else:
-    for p in projects[:25]:
-        st.markdown(f"**#{p['id']} {p['name']}** · `{p.get('stage') or p.get('status')}` · {p.get('chain')}")
-        if p.get("notes"):
-            st.caption((p["notes"] or "")[:160])
+total = sum(len(v) for v in results.values())
+st.caption(f"{total} hit(s) across {len(cats)} categor{'y' if len(cats)==1 else 'ies'}")
 
-st.subheader(f"Airdrops ({len(airdrops)})")
-if not airdrops:
-    st.caption("No airdrop hits.")
-else:
-    for a in airdrops[:25]:
-        st.markdown(
-            f"**#{a['id']} {a['project_name']}** · `{a.get('status')}` · {a.get('chain')}"
-        )
+for cat in cats:
+    hits = results.get(cat) or []
+    st.subheader(f"{cat.title()} ({len(hits)})")
+    if not hits:
+        st.caption("No hits.")
+        continue
+    if cat == "projects":
+        for p in hits[:25]:
+            st.markdown(
+                f"**#{p['id']} {p['name']}** · `{p.get('stage') or p.get('status')}` · {p.get('chain')}"
+            )
+            if p.get("notes"):
+                st.caption((p["notes"] or "")[:160])
+    elif cat == "airdrops":
+        for a in hits[:25]:
+            st.markdown(
+                f"**#{a['id']} {a['project_name']}** · `{a.get('status')}` · {a.get('chain')}"
+            )
+    elif cat == "wallets":
+        for w in hits[:25]:
+            st.markdown(f"**#{w['id']} {w['label']}** · `{w.get('address')}` · {w.get('chain')}")
+    elif cat == "exchanges":
+        for e in hits[:25]:
+            st.markdown(
+                f"**#{e['id']} {e['name']}** · `{e.get('type')}` · {e.get('status')} · {e.get('region')}"
+            )
+    elif cat == "education":
+        for path_hit in hits[:25]:
+            with st.expander(path_hit.get("title") or path_hit.get("key", "lesson")):
+                st.caption(path_hit.get("snippet") or "")
+                st.markdown(f"`{path_hit.get('key')}`")
+    elif cat == "resources":
+        for r in hits[:25]:
+            official = " · official" if r.get("is_official") else ""
+            st.markdown(
+                f"**#{r['id']} {r['title']}** · `{r.get('resource_type')}`{official} · clicks={r.get('click_count', 0)}"
+            )
+            if r.get("url"):
+                st.caption(r["url"])
+    elif cat == "notes":
+        for n in hits[:25]:
+            with st.expander(n.get("title") or f"Note #{n.get('id')}"):
+                st.markdown((n.get("body") or "")[:2000])
+                if n.get("project_id"):
+                    st.caption(f"project_id={n['project_id']}")
 
-st.subheader(f"Wallets ({len(wallets)})")
-if not wallets:
-    st.caption("No wallet hits.")
-else:
-    for w in wallets[:25]:
-        st.markdown(f"**#{w['id']} {w['label']}** · `{w.get('address')}` · {w.get('chain')}")
-
-st.subheader(f"Education ({len(lessons)})")
-if not lessons:
-    st.caption("No lesson hits.")
-else:
-    for path in lessons[:25]:
-        with st.expander(path.stem.replace("_", " ").title()):
-            st.markdown(path.read_text(encoding="utf-8")[:2000])
+footer("Search")

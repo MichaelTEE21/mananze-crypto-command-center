@@ -17,7 +17,7 @@ from mccc.notifications import (
     mark_unread,
     unread_count,
 )
-from mccc.ui import empty_state, error_banner, hero, metric_card, page_setup, session_user_id
+from mccc.ui import empty_state, error_banner, hero, metric_card, page_setup, session_user_id, footer
 
 page_setup("notifications", "Notifications")
 hero("Notifications", "Local inbox — alerts, system notes, research reminders.")
@@ -70,3 +70,5 @@ else:
                 dismiss(n["id"])
                 st.rerun()
             st.divider()
+
+footer("Notifications")

@@ -10,7 +10,7 @@ import streamlit as st
 
 from mccc.db import init_db
 from mccc.partners import CATEGORIES, list_partner_links
-from mccc.ui import affiliate_disclosure, hero, page_setup, partner_cta, seed_phrase_warning
+from mccc.ui import affiliate_disclosure, hero, page_setup, partner_cta, seed_phrase_warning, footer
 
 page_setup("partner_directory", "Partner Directory")
 hero(
@@ -77,3 +77,5 @@ for cat in CATEGORIES:
                 st.markdown(f"**Official website (verify):** [{link['official_url']}]({link['official_url']})")
                 partner_cta(link, key_prefix="dir", source_page="partner_directory")
         st.divider()
+
+footer("Partner Directory")

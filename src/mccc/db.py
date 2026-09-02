@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS projects (
     wallet TEXT DEFAULT '',
     last_checked TEXT DEFAULT '',
     next_action TEXT DEFAULT '',
-    stage TEXT DEFAULT 'Researching',
+    stage TEXT DEFAULT 'RESEARCHING',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS airdrops (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_name TEXT NOT NULL,
     chain TEXT DEFAULT '',
-    status TEXT DEFAULT 'Discovered',
+    status TEXT DEFAULT 'DISCOVERED',
     eligibility_notes TEXT DEFAULT '',
     estimated_value TEXT DEFAULT 'DEMO / unknown',
     deadline TEXT DEFAULT '',
@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS research_notes (
     title TEXT NOT NULL,
     body TEXT DEFAULT '',
     tags TEXT DEFAULT '',
+    project_id INTEGER,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -242,6 +243,89 @@ CREATE TABLE IF NOT EXISTS ai_usage (
 );
 CREATE INDEX IF NOT EXISTS idx_ai_usage_user ON ai_usage(user_id);
 
+CREATE TABLE IF NOT EXISTS exchanges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'CEX',
+    official_url TEXT NOT NULL DEFAULT '',
+    referral_url TEXT DEFAULT '',
+    docs_url TEXT DEFAULT '',
+    chains TEXT DEFAULT '',
+    assets TEXT DEFAULT '',
+    region TEXT DEFAULT '',
+    difficulty TEXT DEFAULT '',
+    security_info TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'Active',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_exchanges_type ON exchanges(type);
+CREATE INDEX IF NOT EXISTS idx_exchanges_status ON exchanges(status);
+
+CREATE TABLE IF NOT EXISTS resources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    url TEXT NOT NULL DEFAULT '',
+    resource_type TEXT DEFAULT '',
+    project_id INTEGER,
+    description TEXT DEFAULT '',
+    is_official INTEGER NOT NULL DEFAULT 0,
+    click_count INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_resources_project ON resources(project_id);
+CREATE INDEX IF NOT EXISTS idx_resources_type ON resources(resource_type);
+
+CREATE TABLE IF NOT EXISTS announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body TEXT DEFAULT '',
+    published INTEGER NOT NULL DEFAULT 0,
+    expires_at TEXT DEFAULT '',
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_announcements_published ON announcements(published);
+
+CREATE TABLE IF NOT EXISTS bookmarks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_type TEXT NOT NULL,
+    item_ref TEXT NOT NULL,
+    notes TEXT DEFAULT '',
+    tags TEXT DEFAULT '',
+    priority INTEGER DEFAULT 3,
+    favourite INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_bookmarks_type ON bookmarks(item_type);
+CREATE INDEX IF NOT EXISTS idx_bookmarks_fav ON bookmarks(favourite);
+
+CREATE TABLE IF NOT EXISTS research_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL DEFAULT 'note',
+    body TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (project_id) REFERENCES projects(id)
+);
+CREATE INDEX IF NOT EXISTS idx_research_events_project ON research_events(project_id);
+
+CREATE TABLE IF NOT EXISTS project_tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    tag TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (project_id) REFERENCES projects(id)
+);
+CREATE INDEX IF NOT EXISTS idx_project_tags_project ON project_tags(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_tags_tag ON project_tags(tag);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT DEFAULT '',
+    updated_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_page ON analytics_events(page_key);
 """
@@ -249,50 +333,96 @@ CREATE INDEX IF NOT EXISTS idx_analytics_events_page ON analytics_events(page_ke
 
 
 PROJECT_STAGES = (
-    "Discovered",
-    "Researching",
-    "Farming",
-    "Monitoring",
-    "TGE Soon",
-    "Completed",
+    "DISCOVERED",
+    "RESEARCHING",
+    "FARMING",
+    "WATCHLIST",
+    "WAITING FOR TGE",
+    "COMPLETED",
+    "ARCHIVED",
 )
 
 AIRDROP_STATUSES = (
-    "Discovered",
-    "Researching",
-    "Farming",
-    "Waiting",
-    "TGE Soon",
-    "Claim Available",
-    "Claimed",
-    "Completed",
-    "Dead",
+    "DISCOVERED",
+    "RESEARCHING",
+    "ACTIVE",
+    "COMPLETED",
+    "WAITING",
+    "CLAIMED",
+    "MISSED",
+    "ARCHIVED",
 )
 
+# Legacy + product aliases → canonical PROJECT_STAGES
+_STAGE_ALIASES = {
+    "discovered": "DISCOVERED",
+    "researching": "RESEARCHING",
+    "farming": "FARMING",
+    "watchlist": "WATCHLIST",
+    "monitoring": "WATCHLIST",
+    "watching": "WATCHLIST",
+    "waiting for tge": "WAITING FOR TGE",
+    "tge soon": "WAITING FOR TGE",
+    "completed": "COMPLETED",
+    "archived": "ARCHIVED",
+}
+
 _STATUS_TO_STAGE = {
-    "researching": "Researching",
-    "watching": "Monitoring",
-    "archived": "Completed",
-    "discovered": "Discovered",
-    "farming": "Farming",
-    "monitoring": "Monitoring",
-    "tge soon": "TGE Soon",
-    "completed": "Completed",
+    "researching": "RESEARCHING",
+    "watching": "WATCHLIST",
+    "archived": "ARCHIVED",
+    "discovered": "DISCOVERED",
+    "farming": "FARMING",
+    "monitoring": "WATCHLIST",
+    "watchlist": "WATCHLIST",
+    "tge soon": "WAITING FOR TGE",
+    "waiting for tge": "WAITING FOR TGE",
+    "completed": "COMPLETED",
 }
 
 _AIRDROP_STATUS_MAP = {
-    "watching": "Discovered",
-    "eligible": "Claim Available",
-    "claimed": "Claimed",
-    "researching": "Researching",
-    "farming": "Farming",
-    "waiting": "Waiting",
-    "tge soon": "TGE Soon",
-    "claim available": "Claim Available",
-    "completed": "Completed",
-    "dead": "Dead",
-    "discovered": "Discovered",
+    "discovered": "DISCOVERED",
+    "researching": "RESEARCHING",
+    "active": "ACTIVE",
+    "farming": "ACTIVE",
+    "claim available": "ACTIVE",
+    "eligible": "ACTIVE",
+    "waiting": "WAITING",
+    "tge soon": "WAITING",
+    "claimed": "CLAIMED",
+    "completed": "COMPLETED",
+    "missed": "MISSED",
+    "dead": "MISSED",
+    "archived": "ARCHIVED",
+    "watching": "DISCOVERED",
 }
+
+
+def normalize_project_stage(stage: str | None = None, status: str | None = None) -> str:
+    """Map legacy / display aliases to canonical PROJECT_STAGES value."""
+    s = (stage or "").strip()
+    if s:
+        mapped = _STAGE_ALIASES.get(s.lower())
+        if mapped:
+            return mapped
+        if s in PROJECT_STAGES:
+            return s
+    if status:
+        mapped = _STATUS_TO_STAGE.get(str(status).lower()) or _STAGE_ALIASES.get(str(status).lower())
+        if mapped:
+            return mapped
+    return "RESEARCHING"
+
+
+def normalize_airdrop_status(status: str | None = None) -> str:
+    """Map legacy airdrop status strings to canonical AIRDROP_STATUSES."""
+    s = (status or "").strip()
+    if not s:
+        return "DISCOVERED"
+    if s in AIRDROP_STATUSES:
+        return s
+    return _AIRDROP_STATUS_MAP.get(s.lower(), s if s in AIRDROP_STATUSES else "DISCOVERED")
+
 
 
 def _ensure_column(conn: sqlite3.Connection, table: str, col: str, typedef: str) -> None:
@@ -321,7 +451,19 @@ def _migrate_schema(conn: sqlite3.Connection) -> None:
         ("wallet", "TEXT DEFAULT ''"),
         ("last_checked", "TEXT DEFAULT ''"),
         ("next_action", "TEXT DEFAULT ''"),
-        ("stage", "TEXT DEFAULT 'Researching'"),
+        ("stage", "TEXT DEFAULT 'RESEARCHING'"),
+        ("ticker", "TEXT DEFAULT ''"),
+        ("twitter", "TEXT DEFAULT ''"),
+        ("discord", "TEXT DEFAULT ''"),
+        ("telegram", "TEXT DEFAULT ''"),
+        ("github", "TEXT DEFAULT ''"),
+        ("blog", "TEXT DEFAULT ''"),
+        ("research_notes", "TEXT DEFAULT ''"),
+        ("risk_notes", "TEXT DEFAULT ''"),
+        ("personal_rating", "INTEGER DEFAULT 0"),
+        ("launch_status", "TEXT DEFAULT ''"),
+        ("token_status", "TEXT DEFAULT ''"),
+        ("tags", "TEXT DEFAULT ''"),
     ]:
         _ensure_column(conn, "projects", col, typedef)
 
@@ -342,32 +484,103 @@ def _migrate_schema(conn: sqlite3.Connection) -> None:
         ("twitter", "TEXT DEFAULT ''"),
         ("telegram", "TEXT DEFAULT ''"),
         ("claim_page", "TEXT DEFAULT ''"),
+        ("funding", "TEXT DEFAULT ''"),
+        ("investors", "TEXT DEFAULT ''"),
+        ("risk", "TEXT DEFAULT ''"),
+        ("last_checked", "TEXT DEFAULT ''"),
+        ("priority", "INTEGER DEFAULT 3"),
     ]:
         _ensure_column(conn, "airdrops", col, typedef)
 
     _ensure_column(conn, "partner_link_clicks", "source_page", "TEXT DEFAULT ''")
 
-    # Migrate project status → stage when stage empty or still default from old status
+    # Normalize project stages (legacy Title Case / aliases → canonical)
     rows = conn.execute("SELECT id, status, stage FROM projects").fetchall()
     for r in rows:
-        status = (r["status"] or "").strip()
-        stage = (r["stage"] or "").strip()
-        mapped = _STATUS_TO_STAGE.get(status.lower())
-        # If stage is blank or looks like it was never set while status is legacy
-        if mapped and (not stage or stage == "Researching" and status.lower() in ("watching", "archived")):
-            conn.execute("UPDATE projects SET stage=? WHERE id=?", (mapped, r["id"]))
-        elif mapped and stage not in PROJECT_STAGES:
-            conn.execute("UPDATE projects SET stage=? WHERE id=?", (mapped, r["id"]))
-        elif stage and stage not in PROJECT_STAGES and mapped:
-            conn.execute("UPDATE projects SET stage=? WHERE id=?", (mapped, r["id"]))
+        new_stage = normalize_project_stage(r["stage"], r["status"])
+        if (r["stage"] or "").strip() != new_stage:
+            conn.execute("UPDATE projects SET stage=? WHERE id=?", (new_stage, r["id"]))
 
-    # Migrate airdrop statuses
+    # Normalize airdrop statuses
     arows = conn.execute("SELECT id, status FROM airdrops").fetchall()
     for r in arows:
-        status = (r["status"] or "").strip()
-        mapped = _AIRDROP_STATUS_MAP.get(status.lower())
-        if mapped and status != mapped:
-            conn.execute("UPDATE airdrops SET status=? WHERE id=?", (mapped, r["id"]))
+        new_status = normalize_airdrop_status(r["status"])
+        if (r["status"] or "").strip() != new_status:
+            conn.execute("UPDATE airdrops SET status=? WHERE id=?", (new_status, r["id"]))
+
+    # research_notes: link optional project_id (MCCC 2.0)
+    _ensure_column(conn, "research_notes", "project_id", "INTEGER")
+
+    # users soft-delete (Phase 12)
+    _ensure_column(conn, "users", "deleted_at", "TEXT")
+
+    # Ensure 2.0 tables exist on upgraded DBs (CREATE IF NOT EXISTS is idempotent)
+    conn.executescript("""
+    CREATE TABLE IF NOT EXISTS exchanges (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'CEX',
+        official_url TEXT NOT NULL DEFAULT '',
+        referral_url TEXT DEFAULT '',
+        docs_url TEXT DEFAULT '',
+        chains TEXT DEFAULT '',
+        assets TEXT DEFAULT '',
+        region TEXT DEFAULT '',
+        difficulty TEXT DEFAULT '',
+        security_info TEXT DEFAULT '',
+        description TEXT DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'Active',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS resources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL DEFAULT '',
+        resource_type TEXT DEFAULT '',
+        project_id INTEGER,
+        description TEXT DEFAULT '',
+        is_official INTEGER NOT NULL DEFAULT 0,
+        click_count INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS announcements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        body TEXT DEFAULT '',
+        published INTEGER NOT NULL DEFAULT 0,
+        expires_at TEXT DEFAULT '',
+        created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS bookmarks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_type TEXT NOT NULL,
+        item_ref TEXT NOT NULL,
+        notes TEXT DEFAULT '',
+        tags TEXT DEFAULT '',
+        priority INTEGER DEFAULT 3,
+        favourite INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS research_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL,
+        event_type TEXT NOT NULL DEFAULT 'note',
+        body TEXT DEFAULT '',
+        created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS project_tags (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL,
+        tag TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT DEFAULT '',
+        updated_at TEXT NOT NULL
+    );
+    """)
 
 
 def utc_now() -> str:
@@ -399,6 +612,9 @@ def init_db(db_path: Optional[Path] = None) -> None:
     from mccc.partners import seed_demo_partners
 
     seed_demo_partners(db_path)
+    from mccc.exchanges import seed_demo_exchanges
+
+    seed_demo_exchanges(db_path)
 
 
 def _seed_feature_flags(conn: sqlite3.Connection) -> None:
@@ -421,9 +637,9 @@ def _seed_projects_if_empty(conn: sqlite3.Connection) -> None:
         return
     now = utc_now()
     demos = [
-        ("DEMO: Layer-2 Research Brief", "ethereum", "researching", "Researching", "EXAMPLE notes — compare fees, TVL, bridge risk.", 2),
-        ("DEMO: DeFi Protocol Diligence", "multi", "watching", "Monitoring", "EXAMPLE — read docs, audit status, token unlocks.", 3),
-        ("DEMO: NFT Market Structure", "ethereum", "archived", "Completed", "EXAMPLE case closed — education only.", 5),
+        ("DEMO: Layer-2 Research Brief", "ethereum", "researching", "RESEARCHING", "EXAMPLE notes — compare fees, TVL, bridge risk.", 2),
+        ("DEMO: DeFi Protocol Diligence", "multi", "watching", "WATCHLIST", "EXAMPLE — read docs, audit status, token unlocks.", 3),
+        ("DEMO: NFT Market Structure", "ethereum", "archived", "COMPLETED", "EXAMPLE case closed — education only.", 5),
     ]
     for name, chain, status, stage, notes, priority in demos:
         conn.execute(
@@ -439,9 +655,9 @@ def _seed_airdrops_if_empty(conn: sqlite3.Connection) -> None:
         return
     now = utc_now()
     demos = [
-        ("DEMO Protocol Alpha", "ethereum", "Discovered", "EXAMPLE: testnet txs, Discord role — not live eligibility.", "DEMO / unknown", ""),
-        ("DEMO Chain Beta Points", "solana", "Claim Available", "EXAMPLE: points program notes for research practice.", "DEMO estimate only", "TBD"),
-        ("DEMO Governance Gamma", "arbitrum", "Claimed", "EXAMPLE claimed entry — educational tracker.", "DEMO", "2024-01-01"),
+        ("DEMO Protocol Alpha", "ethereum", "DISCOVERED", "EXAMPLE: testnet txs, Discord role — not live eligibility.", "DEMO / unknown", ""),
+        ("DEMO Chain Beta Points", "solana", "ACTIVE", "EXAMPLE: points program notes for research practice.", "DEMO estimate only", "TBD"),
+        ("DEMO Governance Gamma", "arbitrum", "CLAIMED", "EXAMPLE claimed entry — educational tracker.", "DEMO", "2024-01-01"),
     ]
     for name, chain, status, notes, value, deadline in demos:
         conn.execute(
@@ -459,6 +675,59 @@ def list_projects(db_path: Optional[Path] = None) -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+PROJECT_EXTRA_FIELDS = {
+    "description",
+    "category",
+    "risk_rating",
+    "funding",
+    "investors",
+    "token",
+    "tge",
+    "website",
+    "docs",
+    "social_links",
+    "tasks",
+    "wallet",
+    "last_checked",
+    "next_action",
+    "ticker",
+    "twitter",
+    "discord",
+    "telegram",
+    "github",
+    "blog",
+    "research_notes",
+    "risk_notes",
+    "personal_rating",
+    "launch_status",
+    "token_status",
+    "tags",
+}
+
+AIRDROP_EXTRA_FIELDS = {
+    "category",
+    "start_date",
+    "end_date",
+    "tge_date",
+    "token",
+    "eligibility",
+    "points",
+    "rank",
+    "wallet_used",
+    "official_website",
+    "docs_url",
+    "discord",
+    "twitter",
+    "telegram",
+    "claim_page",
+    "funding",
+    "investors",
+    "risk",
+    "last_checked",
+    "priority",
+}
+
+
 def add_project(
     name: str,
     chain: str = "",
@@ -470,28 +739,11 @@ def add_project(
     **extra: Any,
 ) -> int:
     now = utc_now()
-    if stage is None:
-        stage = _STATUS_TO_STAGE.get((status or "").lower(), "Researching")
+    stage = normalize_project_stage(stage, status)
     extra_cols = {
         k: v
         for k, v in extra.items()
-        if k
-        in {
-            "description",
-            "category",
-            "risk_rating",
-            "funding",
-            "investors",
-            "token",
-            "tge",
-            "website",
-            "docs",
-            "social_links",
-            "tasks",
-            "wallet",
-            "last_checked",
-            "next_action",
-        }
+        if k in PROJECT_EXTRA_FIELDS
     }
     cols = ["name", "chain", "status", "stage", "notes", "priority", "created_at", "updated_at"]
     vals: list[Any] = [name.strip(), chain.strip(), status, stage, notes, priority, now, now]
@@ -517,28 +769,14 @@ def update_project(project_id: int, **fields: Any) -> None:
         "notes",
         "priority",
         "stage",
-        "description",
-        "category",
-        "risk_rating",
-        "funding",
-        "investors",
-        "token",
-        "tge",
-        "website",
-        "docs",
-        "social_links",
-        "tasks",
-        "wallet",
-        "last_checked",
-        "next_action",
-    }
+    } | PROJECT_EXTRA_FIELDS
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return
-    if "status" in updates and "stage" not in updates:
-        mapped = _STATUS_TO_STAGE.get(str(updates["status"]).lower())
-        if mapped:
-            updates["stage"] = mapped
+    if "stage" in updates:
+        updates["stage"] = normalize_project_stage(updates["stage"], updates.get("status"))
+    elif "status" in updates:
+        updates["stage"] = normalize_project_stage(None, updates["status"])
     updates["updated_at"] = utc_now()
     cols = ", ".join(f"{k}=?" for k in updates)
     vals = list(updates.values()) + [project_id]
@@ -548,6 +786,8 @@ def update_project(project_id: int, **fields: Any) -> None:
 
 def delete_project(project_id: int, db_path: Optional[Path] = None) -> None:
     with connect(db_path) as conn:
+        conn.execute("DELETE FROM research_events WHERE project_id=?", (project_id,))
+        conn.execute("DELETE FROM project_tags WHERE project_id=?", (project_id,))
         conn.execute("DELETE FROM projects WHERE id=?", (project_id,))
 
 
@@ -562,7 +802,7 @@ def list_airdrops(db_path: Optional[Path] = None) -> list[dict[str, Any]]:
 def add_airdrop(
     project_name: str,
     chain: str = "",
-    status: str = "Discovered",
+    status: str = "DISCOVERED",
     eligibility_notes: str = "",
     estimated_value: str = "DEMO / unknown",
     deadline: str = "",
@@ -570,25 +810,8 @@ def add_airdrop(
     **extra: Any,
 ) -> int:
     now = utc_now()
-    # Accept legacy status aliases
-    status = _AIRDROP_STATUS_MAP.get(status.lower(), status) if status else "Discovered"
-    extra_allowed = {
-        "category",
-        "start_date",
-        "end_date",
-        "tge_date",
-        "token",
-        "eligibility",
-        "points",
-        "rank",
-        "wallet_used",
-        "official_website",
-        "docs_url",
-        "discord",
-        "twitter",
-        "telegram",
-        "claim_page",
-    }
+    status = normalize_airdrop_status(status)
+    extra_allowed = AIRDROP_EXTRA_FIELDS
     cols = [
         "project_name",
         "chain",
@@ -631,28 +854,12 @@ def update_airdrop(airdrop_id: int, **fields: Any) -> None:
         "eligibility_notes",
         "estimated_value",
         "deadline",
-        "category",
-        "start_date",
-        "end_date",
-        "tge_date",
-        "token",
-        "eligibility",
-        "points",
-        "rank",
-        "wallet_used",
-        "official_website",
-        "docs_url",
-        "discord",
-        "twitter",
-        "telegram",
-        "claim_page",
-    }
+    } | AIRDROP_EXTRA_FIELDS
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return
     if "status" in updates and updates["status"]:
-        s = str(updates["status"])
-        updates["status"] = _AIRDROP_STATUS_MAP.get(s.lower(), s)
+        updates["status"] = normalize_airdrop_status(str(updates["status"]))
     updates["updated_at"] = utc_now()
     cols = ", ".join(f"{k}=?" for k in updates)
     vals = list(updates.values()) + [airdrop_id]
@@ -680,14 +887,14 @@ def add_wallet(
     notes: str = "",
     db_path: Optional[Path] = None,
 ) -> int:
+    from mccc.security import reject_sensitive_credential
+
     addr = address.strip()
     if not addr or " " in addr:
         raise ValueError("Address must be a non-empty public address string")
-    # Refuse anything that looks like a private key / seed
-    lowered = addr.lower()
-    if any(x in lowered for x in ("private", "seed", "mnemonic", "0x" + "0" * 60)):
-        if "private" in lowered or "seed" in lowered or "mnemonic" in lowered:
-            raise ValueError("Private keys and seed phrases are not allowed")
+    reject_sensitive_credential(addr, field="wallet.address")
+    reject_sensitive_credential(label, field="wallet.label")
+    reject_sensitive_credential(notes or "", field="wallet.notes")
     now = utc_now()
     with connect(db_path) as conn:
         cur = conn.execute(
@@ -782,12 +989,42 @@ def list_notes(db_path: Optional[Path] = None) -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
-def add_note(title: str, body: str = "", tags: str = "", db_path: Optional[Path] = None) -> int:
+def add_note(
+    title: str,
+    body: str = "",
+    tags: str = "",
+    project_id: Optional[int] = None,
+    db_path: Optional[Path] = None,
+) -> int:
     now = utc_now()
     with connect(db_path) as conn:
         cur = conn.execute(
-            """INSERT INTO research_notes (title, body, tags, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?)""",
-            (title.strip(), body, tags, now, now),
+            """INSERT INTO research_notes (title, body, tags, project_id, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (title.strip(), body, tags, project_id, now, now),
         )
         return int(cur.lastrowid)
+
+
+# --- App settings (key/value) ---
+
+def get_setting(key: str, default: str = "", db_path: Optional[Path] = None) -> str:
+    with connect(db_path) as conn:
+        row = conn.execute("SELECT value FROM app_settings WHERE key=?", (key,)).fetchone()
+        return str(row["value"]) if row else default
+
+
+def set_setting(key: str, value: str, db_path: Optional[Path] = None) -> None:
+    now = utc_now()
+    with connect(db_path) as conn:
+        conn.execute(
+            """INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)
+               ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at""",
+            (key, value, now),
+        )
+
+
+def list_settings(db_path: Optional[Path] = None) -> dict[str, str]:
+    with connect(db_path) as conn:
+        rows = conn.execute("SELECT key, value FROM app_settings ORDER BY key").fetchall()
+        return {r["key"]: r["value"] for r in rows}

@@ -11,7 +11,7 @@ import streamlit as st
 
 from mccc.market import DEFAULT_IDS
 from mccc.market_provider import clear_market_cache, get_default_provider
-from mccc.ui import demo_callout, empty_state, hero, live_or_demo_badge, metric_card, page_setup
+from mccc.ui import demo_callout, empty_state, hero, live_or_demo_badge, metric_card, page_setup, footer
 
 page_setup("markets", "Markets")
 hero("Markets", "BTC / ETH / SOL + CoinGecko markets. DEMO fallback is always labelled.")
@@ -86,3 +86,5 @@ else:
 
 st.info("For raw API tinkering see **Market APIs** (stage 5). Prices are never silently invented.")
 st.page_link("pages/5_Market_APIs.py", label="Open Market APIs (slim)", icon="🔌")
+
+footer("Markets")

@@ -10,11 +10,11 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from mccc.db import is_feature_enabled
+from mccc.subscriptions import has_pro_feature
 from mccc.demo_data import DEMO_PORTFOLIO, DEMO_PRICE_HISTORY, portfolio_summary
 from mccc.portfolio import list_assets, compute_summary
 from mccc.market_provider import get_default_provider
-from mccc.ui import demo_callout, hero, page_setup, pro_locked_panel, session_user_id
+from mccc.ui import demo_callout, footer, hero, page_setup, pro_locked_panel, session_user_id, upgrade_cta
 
 page_setup("analytics", "Analytics")
 hero("Analytics", "Simple charts on labelled DEMO series and/or live market snapshot.")
@@ -78,10 +78,22 @@ else:
     st.plotly_chart(pie, use_container_width=True)
 
 st.divider()
-st.subheader("PRO advanced analytics (architecture)")
-if is_feature_enabled("pro_advanced_analytics"):
-    st.success("PRO flag unlocked locally — showing extra DEMO correlation table.")
+st.subheader("PRO advanced analytics & export")
+_uid = session_user_id()
+if has_pro_feature("pro_advanced_analytics", user_id=_uid):
+    st.success("PRO unlocked locally — advanced DEMO correlation + CSV export.")
     corr = hist.assign(ret=hist["price"].pct_change()).dropna()
     st.dataframe(corr.tail(10), use_container_width=True, hide_index=True)
+    csv = corr.to_csv(index=False)
+    st.download_button(
+        "Export DEMO series CSV (PRO)",
+        data=csv,
+        file_name="mccc_demo_analytics_export.csv",
+        mime="text/csv",
+    )
+    st.caption("Export is local DEMO/synthetic series unless markets are LIVE — labelled honestly.")
 else:
     pro_locked_panel("Multi-series analytics & export")
+    upgrade_cta("Advanced analytics export requires PRO (Coming Soon payments).")
+
+footer("Analytics")

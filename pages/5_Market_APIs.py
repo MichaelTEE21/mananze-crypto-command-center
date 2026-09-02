@@ -11,7 +11,7 @@ import streamlit as st
 
 from mccc.market import DEFAULT_IDS
 from mccc.market_provider import clear_market_cache, get_default_provider
-from mccc.ui import demo_callout, hero, live_or_demo_badge, page_setup
+from mccc.ui import demo_callout, hero, live_or_demo_badge, page_setup, footer
 
 page_setup("market_apis", "Market APIs")
 hero(
@@ -62,3 +62,5 @@ else:
     st.warning("No rows returned.")
 
 st.caption("Optional COINGECKO_API_KEY in .env — never commit secrets. Offline → DEMO fallback.")
+
+footer("Market APIs")

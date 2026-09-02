@@ -14,11 +14,13 @@ FORBIDDEN_MARKERS = ("private key", "seed phrase", "mnemonic", "password", "secr
 
 
 def validate_public_address(address: str, chain: str = "ethereum") -> str:
+    from mccc.security import SensitiveCredentialError, reject_sensitive_credential
+
     raw = (address or "").strip()
-    lowered = raw.lower()
-    for marker in FORBIDDEN_MARKERS:
-        if marker in lowered:
-            raise ValueError("Private keys, seed phrases, and passwords are never accepted.")
+    try:
+        reject_sensitive_credential(raw, field="wallet.address")
+    except SensitiveCredentialError as exc:
+        raise ValueError(str(exc)) from exc
     if chain.lower() in ("ethereum", "arbitrum", "base", "optimism", "polygon"):
         if not ETH_ADDRESS_RE.match(raw):
             # Allow DEMO addresses for local practice

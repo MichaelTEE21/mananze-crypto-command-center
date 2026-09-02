@@ -10,6 +10,7 @@ import streamlit as st
 
 from mccc.partners import list_partner_links
 from mccc.ui import (
+    footer,
     affiliate_disclosure,
     empty_state,
     hero,
@@ -76,3 +77,5 @@ for cat, title in [("Wallet", "Wallets"), ("CEX", "Centralized exchanges")]:
             st.divider()
 
 st.info("Not financial advice. Do your own research. MCCC will never ask for your seed phrase.")
+
+footer("Start Here")

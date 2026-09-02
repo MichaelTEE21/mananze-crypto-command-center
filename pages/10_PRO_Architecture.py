@@ -11,8 +11,17 @@ import streamlit as st
 
 from mccc.auth import get_session_user
 from mccc.db import get_feature_flags, init_db, set_feature_flag
-from mccc.subscriptions import PRO_PRICE_LABEL, get_or_create_free, is_pro, set_tier
-from mccc.ui import hero, page_setup
+from mccc.subscriptions import (
+    PRO_PAYMENTS_MESSAGE,
+    PRO_PRICE_LABEL,
+    check_limit,
+    free_limits,
+    get_or_create_free,
+    is_pro,
+    set_tier,
+    upgrade_cta_markdown,
+)
+from mccc.ui import footer, hero, page_setup, upgrade_cta
 
 page_setup("pro_architecture", "PRO Architecture")
 hero(
@@ -37,16 +46,15 @@ st.markdown(
     f"""
     <div class="mccc-card">
       <h3 style="margin-top:0;color:#c4a0ff;">PRO · {PRO_PRICE_LABEL} (planned)</h3>
-      <p style="color:#9aa7b5;">Stripe checkout is <strong>Coming Soon</strong>. There is no card capture,
-      no billing backend, and no fake “payment succeeded” state.</p>
+      <p style="color:#9aa7b5;"><strong>{PRO_PAYMENTS_MESSAGE}</strong>
+      There is no card capture, no billing backend, and no fake “payment succeeded” state.</p>
       <ul style="color:#cfd8e3;">
-        <li>Advanced analytics &amp; export</li>
+        <li>Unlimited projects / wallets / airdrops (soft FREE caps lifted)</li>
+        <li>Advanced analytics &amp; CSV export</li>
         <li>Wallet / watchlist alerts</li>
-        <li>Extended research checklists</li>
+        <li>Extended AI research checklists</li>
         <li>Portfolio sync architecture</li>
       </ul>
-      <p style="color:#9aa7b5;font-size:0.85rem;">Free tier limits (soft): local SQLite only; no multi-device sync;
-      LLM assist requires your own AI_API_KEY.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -54,25 +62,47 @@ st.markdown(
 
 col_a, col_b = st.columns(2)
 with col_a:
-    st.button(f"Upgrade to PRO · {PRO_PRICE_LABEL} — Coming Soon", disabled=True, use_container_width=True)
+    st.button(
+        f"Upgrade to PRO · {PRO_PRICE_LABEL} — Coming Soon",
+        disabled=True,
+        use_container_width=True,
+    )
 with col_b:
-    st.caption("Checkout intentionally disabled. Never fakes a successful payment.")
+    st.caption(f"{PRO_PAYMENTS_MESSAGE} Checkout intentionally disabled.")
 
-st.info(f"Current local tier: **{sub.get('tier')}** · provider=`{sub.get('provider')}` · PRO active={is_pro(user_id=uid)}")
+st.warning(PRO_PAYMENTS_MESSAGE)
+
+st.info(
+    f"Current local tier: **{sub.get('tier')}** · provider=`{sub.get('provider')}` · "
+    f"PRO active={is_pro(user_id=uid)}"
+)
+
+st.subheader("Free soft limits")
+limits = free_limits()
+for resource in ("projects", "wallets", "airdrops"):
+    gate = check_limit(resource, user_id=uid)
+    if gate.get("unlimited"):
+        st.success(f"**{resource}**: PRO unlimited (count={gate['count']})")
+    elif gate["allowed"]:
+        st.write(f"**{resource}**: {gate['count']}/{gate['limit']} — {gate['remaining']} left")
+    else:
+        st.error(gate["message"])
+        upgrade_cta(gate["message"])
+
+st.caption(upgrade_cta_markdown())
 
 st.subheader("Local architecture unlock (not payment)")
 env_unlock = os.environ.get("MCCC_PRO_UNLOCK", "0") == "1"
 if env_unlock:
-    st.success("MCCC_PRO_UNLOCK=1 — all PRO features treated as enabled this session.")
+    st.success("MCCC_PRO_UNLOCK=1 — all PRO features treated as enabled this session (still not a payment).")
 
 c1, c2 = st.columns(2)
 with c1:
     if st.button("Set local tier → pro (architecture)", disabled=env_unlock):
         set_tier("pro", user_id=uid)
-        # also flip flags for convenience
         for flag in get_feature_flags():
             set_feature_flag(flag["key"], True)
-        st.success("Local tier set to pro — still not a payment.")
+        st.success("Local tier set to pro — still not a payment. No charge occurred.")
         st.rerun()
 with c2:
     if st.button("Set local tier → free"):
@@ -95,3 +125,4 @@ for flag in flags:
         st.rerun()
 
 st.caption("Toggles write to SQLite feature_flags. Still: architecture / not charged.")
+footer("PRO Architecture")

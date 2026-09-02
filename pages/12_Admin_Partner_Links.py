@@ -23,7 +23,7 @@ from mccc.partners import (
     set_partner_status,
     update_partner_link,
 )
-from mccc.ui import affiliate_disclosure, hero, page_setup, seed_phrase_warning
+from mccc.ui import affiliate_disclosure, hero, page_setup, seed_phrase_warning, footer
 
 DEMO_ADMIN_PASSWORD = "mccc-admin-demo"
 
@@ -209,3 +209,5 @@ else:
             delete_partner_link(row["id"])
             st.warning("Deleted.")
             st.rerun()
+
+footer("Admin Partner Links")

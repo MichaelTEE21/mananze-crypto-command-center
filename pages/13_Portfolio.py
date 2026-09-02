@@ -20,6 +20,7 @@ from mccc.portfolio import (
     update_asset,
 )
 from mccc.ui import (
+    footer,
     demo_callout,
     empty_state,
     error_banner,
@@ -160,3 +161,5 @@ if uploaded and st.button("Import rows", type="primary"):
         st.rerun()
     except Exception as exc:  # noqa: BLE001
         error_banner(str(exc))
+
+footer("Portfolio")

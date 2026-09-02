@@ -9,10 +9,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import pandas as pd
 import streamlit as st
 
-from mccc.db import is_feature_enabled
+from mccc.subscriptions import has_pro_feature
 from mccc.market_provider import get_default_provider
 from mccc.notifications import create as create_notification
-from mccc.ui import empty_state, error_banner, hero, page_setup, pro_locked_panel, session_user_id
+from mccc.ui import empty_state, error_banner, footer, hero, page_setup, pro_locked_panel, session_user_id, upgrade_cta
+from mccc.bookmarks import ITEM_TYPES, delete_bookmark, list_bookmarks, set_favourite
 from mccc.watchlist import (
     ITEM_TYPES,
     add_alert,
@@ -58,8 +59,9 @@ else:
 
 st.divider()
 st.subheader("Alerts")
-if not is_feature_enabled("pro_wallet_alerts"):
+if not has_pro_feature("pro_wallet_alerts", user_id=uid):
     pro_locked_panel("Watchlist alerts")
+    upgrade_cta("Unlimited/advanced alerts are a PRO architecture feature.")
     st.caption("You can still create alerts locally for architecture testing.")
 
 with st.form("add_alert", clear_on_submit=True):
@@ -133,3 +135,40 @@ if st.button("Run alert check now", type="primary"):
             )
             fired += 1
     st.success(f"Fired {fired} notification(s). Source: {source} · live={is_live}")
+
+st.divider()
+st.subheader("Bookmarks")
+st.caption("Favourites via bookmarks.py — projects, tokens, wallets, resources, lessons, notes.")
+with st.form("add_bookmark", clear_on_submit=True):
+    bc1, bc2 = st.columns(2)
+    b_ref = bc1.text_input("Item ref", placeholder="project id / ETH / lesson key")
+    b_type = bc2.selectbox("Bookmark type", list(ITEM_TYPES))
+    b_notes = st.text_input("Bookmark notes")
+    b_tags = st.text_input("Tags")
+    b_pri = st.slider("Priority (1=high)", 1, 5, 3)
+    if st.form_submit_button("Save bookmark", type="primary"):
+        try:
+            set_favourite(b_type, b_ref, favourite=True, notes=b_notes, tags=b_tags, priority=b_pri)
+            st.success("Bookmarked.")
+            st.rerun()
+        except Exception as exc:  # noqa: BLE001
+            error_banner(str(exc))
+
+bmarks = list_bookmarks()
+if not bmarks:
+    empty_state("No bookmarks", "Star items from Education / Research or add above.")
+else:
+    type_f = st.selectbox("Filter bookmarks", ["(all)"] + list(ITEM_TYPES), key="bm_filter")
+    shown = [b for b in bmarks if type_f == "(all)" or b.get("item_type") == type_f]
+    cols = ["id", "item_type", "item_ref", "favourite", "priority", "tags", "notes", "created_at"]
+    df_bm = pd.DataFrame(shown)
+    st.dataframe(df_bm[[c for c in cols if c in df_bm.columns]], use_container_width=True, hide_index=True)
+    if shown:
+        labels = {f"#{b['id']} [{b['item_type']}] {b['item_ref']}": b["id"] for b in shown}
+        pick_bm = st.selectbox("Remove bookmark", list(labels.keys()), key="bm_del")
+        if st.button("Delete bookmark"):
+            delete_bookmark(labels[pick_bm])
+            st.warning("Bookmark removed.")
+            st.rerun()
+
+footer("Watchlist")
