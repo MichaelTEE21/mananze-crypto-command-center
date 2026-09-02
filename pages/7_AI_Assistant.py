@@ -1,4 +1,4 @@
-"""Stage 7 — Local rule-based research assistant (no LLM, no invented prices)."""
+"""AI Assistant — wired to ai_service (rule-based + optional LLM)."""
 from __future__ import annotations
 
 import sys
@@ -8,26 +8,44 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mccc.assistant import TIPS, match_tips, structure_research_note
+from mccc.ai_service import answer, research_template
+from mccc.assistant import TIPS
+from mccc.auth import get_session_user
 from mccc.db import add_note, init_db, is_feature_enabled, list_notes, log_event
-from mccc.ui import hero, page_setup, pro_locked_panel
+from mccc.ui import hero, page_setup, pro_locked_panel, seed_phrase_warning
 
 page_setup("ai_assistant", "AI Assistant")
 hero(
     "Research Assistant",
-    "Local rule-based checklists & note structuring — no LLM, no invented live prices.",
+    "Rule-based by default; optional OpenAI-compatible API via AI_API_KEY. Never invents live prices.",
 )
+seed_phrase_warning()
 
 init_db()
+user = get_session_user()
+uid = user.get("id") if user else None
 
 tab_ask, tab_note, tab_tips = st.tabs(["Ask", "Structure a note", "All tips"])
 
 with tab_ask:
-    q = st.text_input("Ask about workflow / diligence / airdrops / security / markets", placeholder="e.g. airdrop eligibility hygiene")
-    if st.button("Get checklist", type="primary") or q:
-        tips = match_tips(q or "workflow")
-        for tip in tips:
-            with st.expander(tip["title"], expanded=True):
+    q = st.text_input(
+        "Ask about workflow / diligence / airdrops / security / markets",
+        placeholder="e.g. airdrop eligibility hygiene",
+    )
+    use_llm = st.toggle("Try optional LLM if AI_API_KEY set", value=True)
+    if st.button("Get answer", type="primary") and q.strip():
+        result = answer(q, use_llm=use_llm, user_id=uid)
+        mode = result.get("mode", "rule_based")
+        if mode == "refusal":
+            st.error(result["answer"])
+        elif mode == "llm":
+            st.success("Mode: LLM (OpenAI-compatible)")
+            st.markdown(result["answer"])
+        else:
+            st.info("Mode: rule-based (local)")
+            st.markdown(result["answer"])
+        for tip in result.get("tips") or []:
+            with st.expander(tip["title"]):
                 st.markdown(tip["body"])
         log_event("assistant_query", page_key="ai_assistant", meta=(q or "")[:80])
 
@@ -35,7 +53,7 @@ with tab_note:
     topic = st.text_input("Topic", placeholder="Bridge risk on DEMO L2")
     context = st.text_area("Case context (optional)")
     if st.button("Generate structured note", type="primary"):
-        note = structure_research_note(topic or "Untitled", context)
+        note = research_template(topic or "Untitled", context)
         st.session_state["draft_note"] = note
     draft = st.session_state.get("draft_note")
     if draft:
@@ -60,7 +78,7 @@ with tab_tips:
 
 st.divider()
 if is_feature_enabled("pro_ai_deep_research"):
-    st.success("PRO deep-research checklists unlocked (still rule-based, still local).")
+    st.success("PRO deep-research checklists unlocked (still labelled; still local).")
     st.markdown(
         "- Extended: competitor matrix\n"
         "- Extended: token unlock calendar template\n"

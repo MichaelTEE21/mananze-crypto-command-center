@@ -75,5 +75,5 @@ for cat in CATEGORIES:
                 if meta_bits:
                     st.caption(" · ".join(meta_bits))
                 st.markdown(f"**Official website (verify):** [{link['official_url']}]({link['official_url']})")
-                partner_cta(link, key_prefix="dir")
+                partner_cta(link, key_prefix="dir", source_page="partner_directory")
         st.divider()

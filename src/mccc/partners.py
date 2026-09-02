@@ -192,15 +192,19 @@ def delete_partner_link(link_id: int, db_path: Optional[Path] = None) -> None:
         conn.execute("DELETE FROM partner_links WHERE id=?", (link_id,))
 
 
-def record_click(link_id: int, db_path: Optional[Path] = None) -> None:
+def record_click(
+    link_id: int,
+    db_path: Optional[Path] = None,
+    source_page: str = "",
+) -> None:
     link = get_partner_link(link_id, db_path=db_path)
     if not link:
         raise ValueError(f"partner link {link_id} not found")
     with connect(db_path) as conn:
         conn.execute(
-            """INSERT INTO partner_link_clicks (partner_link_id, category, clicked_at)
-               VALUES (?, ?, ?)""",
-            (link_id, link["category"], utc_now()),
+            """INSERT INTO partner_link_clicks (partner_link_id, category, clicked_at, source_page)
+               VALUES (?, ?, ?, ?)""",
+            (link_id, link["category"], utc_now(), source_page or ""),
         )
 
 

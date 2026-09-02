@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import pandas as pd
 import streamlit as st
 
+from mccc.auth import get_session_user
 from mccc.db import init_db
 from mccc.partners import (
     CATEGORIES,
@@ -32,7 +33,12 @@ def _admin_password() -> str:
 
 
 def _is_unlocked() -> bool:
-    return bool(st.session_state.get("mccc_admin_unlocked"))
+    if st.session_state.get("mccc_admin_unlocked"):
+        return True
+    user = get_session_user()
+    if user and user.get("is_admin"):
+        return True
+    return False
 
 
 page_setup("admin_partner_links", "Admin Partner Links")
@@ -52,6 +58,7 @@ if not os.environ.get("MCCC_ADMIN_PASSWORD"):
     )
 
 if not _is_unlocked():
+    st.caption("Unlock with `MCCC_ADMIN_PASSWORD` **or** sign in as an `is_admin` user on Account.")
     with st.form("admin_unlock"):
         pw = st.text_input("Admin password", type="password")
         if st.form_submit_button("Unlock", type="primary"):

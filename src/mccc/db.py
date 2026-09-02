@@ -17,6 +17,21 @@ CREATE TABLE IF NOT EXISTS projects (
     status TEXT DEFAULT 'researching',
     notes TEXT DEFAULT '',
     priority INTEGER DEFAULT 3,
+    description TEXT DEFAULT '',
+    category TEXT DEFAULT '',
+    risk_rating TEXT DEFAULT '',
+    funding TEXT DEFAULT '',
+    investors TEXT DEFAULT '',
+    token TEXT DEFAULT '',
+    tge TEXT DEFAULT '',
+    website TEXT DEFAULT '',
+    docs TEXT DEFAULT '',
+    social_links TEXT DEFAULT '',
+    tasks TEXT DEFAULT '',
+    wallet TEXT DEFAULT '',
+    last_checked TEXT DEFAULT '',
+    next_action TEXT DEFAULT '',
+    stage TEXT DEFAULT 'Researching',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -25,10 +40,25 @@ CREATE TABLE IF NOT EXISTS airdrops (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_name TEXT NOT NULL,
     chain TEXT DEFAULT '',
-    status TEXT DEFAULT 'watching',
+    status TEXT DEFAULT 'Discovered',
     eligibility_notes TEXT DEFAULT '',
     estimated_value TEXT DEFAULT 'DEMO / unknown',
     deadline TEXT DEFAULT '',
+    category TEXT DEFAULT '',
+    start_date TEXT DEFAULT '',
+    end_date TEXT DEFAULT '',
+    tge_date TEXT DEFAULT '',
+    token TEXT DEFAULT '',
+    eligibility TEXT DEFAULT '',
+    points TEXT DEFAULT '',
+    rank TEXT DEFAULT '',
+    wallet_used TEXT DEFAULT '',
+    official_website TEXT DEFAULT '',
+    docs_url TEXT DEFAULT '',
+    discord TEXT DEFAULT '',
+    twitter TEXT DEFAULT '',
+    telegram TEXT DEFAULT '',
+    claim_page TEXT DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -43,6 +73,14 @@ CREATE TABLE IF NOT EXISTS wallets (
 );
 
 CREATE TABLE IF NOT EXISTS usage_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT NOT NULL,
+    page_key TEXT DEFAULT '',
+    meta TEXT DEFAULT '',
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS analytics_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_type TEXT NOT NULL,
     page_key TEXT DEFAULT '',
@@ -85,9 +123,251 @@ CREATE TABLE IF NOT EXISTS partner_link_clicks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     partner_link_id INTEGER NOT NULL,
     category TEXT NOT NULL,
-    clicked_at TEXT NOT NULL
+    clicked_at TEXT NOT NULL,
+    source_page TEXT DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    display_name TEXT DEFAULT '',
+    experience_level TEXT DEFAULT '',
+    onboarding_goals TEXT DEFAULT '',
+    is_admin INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+CREATE TABLE IF NOT EXISTS profiles (
+    user_id INTEGER PRIMARY KEY,
+    theme TEXT DEFAULT 'dark',
+    notify_prefs TEXT DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS portfolio_assets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    symbol TEXT NOT NULL,
+    name TEXT DEFAULT '',
+    quantity REAL NOT NULL DEFAULT 0,
+    purchase_price REAL NOT NULL DEFAULT 0,
+    purchase_date TEXT DEFAULT '',
+    network TEXT DEFAULT '',
+    notes TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_portfolio_user ON portfolio_assets(user_id);
+CREATE INDEX IF NOT EXISTS idx_portfolio_symbol ON portfolio_assets(symbol);
+
+CREATE TABLE IF NOT EXISTS watchlist_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    item_type TEXT NOT NULL DEFAULT 'token',
+    symbol_or_ref TEXT NOT NULL,
+    notes TEXT DEFAULT '',
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_watchlist_type ON watchlist_items(item_type);
+
+CREATE TABLE IF NOT EXISTS alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    watchlist_id INTEGER,
+    alert_type TEXT NOT NULL DEFAULT 'price',
+    threshold REAL,
+    meta TEXT DEFAULT '',
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id);
+CREATE INDEX IF NOT EXISTS idx_alerts_active ON alerts(active);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    title TEXT NOT NULL,
+    body TEXT DEFAULT '',
+    category TEXT DEFAULT 'general',
+    read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+
+CREATE TABLE IF NOT EXISTS airdrop_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    airdrop_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    done INTEGER NOT NULL DEFAULT 0,
+    notes TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (airdrop_id) REFERENCES airdrops(id)
+);
+CREATE INDEX IF NOT EXISTS idx_airdrop_tasks_aid ON airdrop_tasks(airdrop_id);
+
+CREATE TABLE IF NOT EXISTS education_progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    lesson_key TEXT NOT NULL,
+    completed INTEGER NOT NULL DEFAULT 0,
+    quiz_score REAL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_education_user ON education_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_education_lesson ON education_progress(lesson_key);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    tier TEXT NOT NULL DEFAULT 'free',
+    status TEXT DEFAULT 'active',
+    provider TEXT DEFAULT 'coming_soon',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+
+CREATE TABLE IF NOT EXISTS ai_usage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    kind TEXT NOT NULL DEFAULT 'chat',
+    tokens_est INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_user ON ai_usage(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_page ON analytics_events(page_key);
 """
+
+
+
+PROJECT_STAGES = (
+    "Discovered",
+    "Researching",
+    "Farming",
+    "Monitoring",
+    "TGE Soon",
+    "Completed",
+)
+
+AIRDROP_STATUSES = (
+    "Discovered",
+    "Researching",
+    "Farming",
+    "Waiting",
+    "TGE Soon",
+    "Claim Available",
+    "Claimed",
+    "Completed",
+    "Dead",
+)
+
+_STATUS_TO_STAGE = {
+    "researching": "Researching",
+    "watching": "Monitoring",
+    "archived": "Completed",
+    "discovered": "Discovered",
+    "farming": "Farming",
+    "monitoring": "Monitoring",
+    "tge soon": "TGE Soon",
+    "completed": "Completed",
+}
+
+_AIRDROP_STATUS_MAP = {
+    "watching": "Discovered",
+    "eligible": "Claim Available",
+    "claimed": "Claimed",
+    "researching": "Researching",
+    "farming": "Farming",
+    "waiting": "Waiting",
+    "tge soon": "TGE Soon",
+    "claim available": "Claim Available",
+    "completed": "Completed",
+    "dead": "Dead",
+    "discovered": "Discovered",
+}
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, col: str, typedef: str) -> None:
+    """Add column if missing (SQLite ALTER TABLE ADD COLUMN). Safe to call repeatedly."""
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    existing = {r[1] for r in rows}
+    if col not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}")
+
+
+def _migrate_schema(conn: sqlite3.Connection) -> None:
+    """Extend legacy tables and normalize status/stage values."""
+    # projects extended columns
+    for col, typedef in [
+        ("description", "TEXT DEFAULT ''"),
+        ("category", "TEXT DEFAULT ''"),
+        ("risk_rating", "TEXT DEFAULT ''"),
+        ("funding", "TEXT DEFAULT ''"),
+        ("investors", "TEXT DEFAULT ''"),
+        ("token", "TEXT DEFAULT ''"),
+        ("tge", "TEXT DEFAULT ''"),
+        ("website", "TEXT DEFAULT ''"),
+        ("docs", "TEXT DEFAULT ''"),
+        ("social_links", "TEXT DEFAULT ''"),
+        ("tasks", "TEXT DEFAULT ''"),
+        ("wallet", "TEXT DEFAULT ''"),
+        ("last_checked", "TEXT DEFAULT ''"),
+        ("next_action", "TEXT DEFAULT ''"),
+        ("stage", "TEXT DEFAULT 'Researching'"),
+    ]:
+        _ensure_column(conn, "projects", col, typedef)
+
+    # airdrops extended columns
+    for col, typedef in [
+        ("category", "TEXT DEFAULT ''"),
+        ("start_date", "TEXT DEFAULT ''"),
+        ("end_date", "TEXT DEFAULT ''"),
+        ("tge_date", "TEXT DEFAULT ''"),
+        ("token", "TEXT DEFAULT ''"),
+        ("eligibility", "TEXT DEFAULT ''"),
+        ("points", "TEXT DEFAULT ''"),
+        ("rank", "TEXT DEFAULT ''"),
+        ("wallet_used", "TEXT DEFAULT ''"),
+        ("official_website", "TEXT DEFAULT ''"),
+        ("docs_url", "TEXT DEFAULT ''"),
+        ("discord", "TEXT DEFAULT ''"),
+        ("twitter", "TEXT DEFAULT ''"),
+        ("telegram", "TEXT DEFAULT ''"),
+        ("claim_page", "TEXT DEFAULT ''"),
+    ]:
+        _ensure_column(conn, "airdrops", col, typedef)
+
+    _ensure_column(conn, "partner_link_clicks", "source_page", "TEXT DEFAULT ''")
+
+    # Migrate project status → stage when stage empty or still default from old status
+    rows = conn.execute("SELECT id, status, stage FROM projects").fetchall()
+    for r in rows:
+        status = (r["status"] or "").strip()
+        stage = (r["stage"] or "").strip()
+        mapped = _STATUS_TO_STAGE.get(status.lower())
+        # If stage is blank or looks like it was never set while status is legacy
+        if mapped and (not stage or stage == "Researching" and status.lower() in ("watching", "archived")):
+            conn.execute("UPDATE projects SET stage=? WHERE id=?", (mapped, r["id"]))
+        elif mapped and stage not in PROJECT_STAGES:
+            conn.execute("UPDATE projects SET stage=? WHERE id=?", (mapped, r["id"]))
+        elif stage and stage not in PROJECT_STAGES and mapped:
+            conn.execute("UPDATE projects SET stage=? WHERE id=?", (mapped, r["id"]))
+
+    # Migrate airdrop statuses
+    arows = conn.execute("SELECT id, status FROM airdrops").fetchall()
+    for r in arows:
+        status = (r["status"] or "").strip()
+        mapped = _AIRDROP_STATUS_MAP.get(status.lower())
+        if mapped and status != mapped:
+            conn.execute("UPDATE airdrops SET status=? WHERE id=?", (mapped, r["id"]))
 
 
 def utc_now() -> str:
@@ -111,6 +391,7 @@ def connect(db_path: Optional[Path] = None) -> Generator[sqlite3.Connection, Non
 def init_db(db_path: Optional[Path] = None) -> None:
     with connect(db_path) as conn:
         conn.executescript(SCHEMA)
+        _migrate_schema(conn)
         _seed_feature_flags(conn)
         _seed_airdrops_if_empty(conn)
         _seed_projects_if_empty(conn)
@@ -140,15 +421,15 @@ def _seed_projects_if_empty(conn: sqlite3.Connection) -> None:
         return
     now = utc_now()
     demos = [
-        ("DEMO: Layer-2 Research Brief", "ethereum", "researching", "EXAMPLE notes — compare fees, TVL, bridge risk.", 2),
-        ("DEMO: DeFi Protocol Diligence", "multi", "watching", "EXAMPLE — read docs, audit status, token unlocks.", 3),
-        ("DEMO: NFT Market Structure", "ethereum", "archived", "EXAMPLE case closed — education only.", 5),
+        ("DEMO: Layer-2 Research Brief", "ethereum", "researching", "Researching", "EXAMPLE notes — compare fees, TVL, bridge risk.", 2),
+        ("DEMO: DeFi Protocol Diligence", "multi", "watching", "Monitoring", "EXAMPLE — read docs, audit status, token unlocks.", 3),
+        ("DEMO: NFT Market Structure", "ethereum", "archived", "Completed", "EXAMPLE case closed — education only.", 5),
     ]
-    for name, chain, status, notes, priority in demos:
+    for name, chain, status, stage, notes, priority in demos:
         conn.execute(
-            """INSERT INTO projects (name, chain, status, notes, priority, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (name, chain, status, notes, priority, now, now),
+            """INSERT INTO projects (name, chain, status, stage, notes, priority, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (name, chain, status, stage, notes, priority, now, now),
         )
 
 
@@ -158,9 +439,9 @@ def _seed_airdrops_if_empty(conn: sqlite3.Connection) -> None:
         return
     now = utc_now()
     demos = [
-        ("DEMO Protocol Alpha", "ethereum", "watching", "EXAMPLE: testnet txs, Discord role — not live eligibility.", "DEMO / unknown", ""),
-        ("DEMO Chain Beta Points", "solana", "eligible", "EXAMPLE: points program notes for research practice.", "DEMO estimate only", "TBD"),
-        ("DEMO Governance Gamma", "arbitrum", "claimed", "EXAMPLE claimed entry — educational tracker.", "DEMO", "2024-01-01"),
+        ("DEMO Protocol Alpha", "ethereum", "Discovered", "EXAMPLE: testnet txs, Discord role — not live eligibility.", "DEMO / unknown", ""),
+        ("DEMO Chain Beta Points", "solana", "Claim Available", "EXAMPLE: points program notes for research practice.", "DEMO estimate only", "TBD"),
+        ("DEMO Governance Gamma", "arbitrum", "Claimed", "EXAMPLE claimed entry — educational tracker.", "DEMO", "2024-01-01"),
     ]
     for name, chain, status, notes, value, deadline in demos:
         conn.execute(
@@ -184,24 +465,80 @@ def add_project(
     status: str = "researching",
     notes: str = "",
     priority: int = 3,
+    stage: Optional[str] = None,
     db_path: Optional[Path] = None,
+    **extra: Any,
 ) -> int:
     now = utc_now()
+    if stage is None:
+        stage = _STATUS_TO_STAGE.get((status or "").lower(), "Researching")
+    extra_cols = {
+        k: v
+        for k, v in extra.items()
+        if k
+        in {
+            "description",
+            "category",
+            "risk_rating",
+            "funding",
+            "investors",
+            "token",
+            "tge",
+            "website",
+            "docs",
+            "social_links",
+            "tasks",
+            "wallet",
+            "last_checked",
+            "next_action",
+        }
+    }
+    cols = ["name", "chain", "status", "stage", "notes", "priority", "created_at", "updated_at"]
+    vals: list[Any] = [name.strip(), chain.strip(), status, stage, notes, priority, now, now]
+    for k, v in extra_cols.items():
+        cols.append(k)
+        vals.append(v)
+    placeholders = ", ".join("?" for _ in cols)
+    col_sql = ", ".join(cols)
     with connect(db_path) as conn:
         cur = conn.execute(
-            """INSERT INTO projects (name, chain, status, notes, priority, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (name.strip(), chain.strip(), status, notes, priority, now, now),
+            f"INSERT INTO projects ({col_sql}) VALUES ({placeholders})",
+            vals,
         )
         return int(cur.lastrowid)
 
 
 def update_project(project_id: int, **fields: Any) -> None:
     db_path = fields.pop("db_path", None)
-    allowed = {"name", "chain", "status", "notes", "priority"}
+    allowed = {
+        "name",
+        "chain",
+        "status",
+        "notes",
+        "priority",
+        "stage",
+        "description",
+        "category",
+        "risk_rating",
+        "funding",
+        "investors",
+        "token",
+        "tge",
+        "website",
+        "docs",
+        "social_links",
+        "tasks",
+        "wallet",
+        "last_checked",
+        "next_action",
+    }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return
+    if "status" in updates and "stage" not in updates:
+        mapped = _STATUS_TO_STAGE.get(str(updates["status"]).lower())
+        if mapped:
+            updates["stage"] = mapped
     updates["updated_at"] = utc_now()
     cols = ", ".join(f"{k}=?" for k in updates)
     vals = list(updates.values()) + [project_id]
@@ -225,37 +562,97 @@ def list_airdrops(db_path: Optional[Path] = None) -> list[dict[str, Any]]:
 def add_airdrop(
     project_name: str,
     chain: str = "",
-    status: str = "watching",
+    status: str = "Discovered",
     eligibility_notes: str = "",
     estimated_value: str = "DEMO / unknown",
     deadline: str = "",
     db_path: Optional[Path] = None,
+    **extra: Any,
 ) -> int:
     now = utc_now()
+    # Accept legacy status aliases
+    status = _AIRDROP_STATUS_MAP.get(status.lower(), status) if status else "Discovered"
+    extra_allowed = {
+        "category",
+        "start_date",
+        "end_date",
+        "tge_date",
+        "token",
+        "eligibility",
+        "points",
+        "rank",
+        "wallet_used",
+        "official_website",
+        "docs_url",
+        "discord",
+        "twitter",
+        "telegram",
+        "claim_page",
+    }
+    cols = [
+        "project_name",
+        "chain",
+        "status",
+        "eligibility_notes",
+        "estimated_value",
+        "deadline",
+        "created_at",
+        "updated_at",
+    ]
+    vals: list[Any] = [
+        project_name.strip(),
+        chain.strip(),
+        status,
+        eligibility_notes,
+        estimated_value,
+        deadline,
+        now,
+        now,
+    ]
+    for k, v in extra.items():
+        if k in extra_allowed:
+            cols.append(k)
+            vals.append(v)
+    placeholders = ", ".join("?" for _ in cols)
     with connect(db_path) as conn:
         cur = conn.execute(
-            """INSERT INTO airdrops (project_name, chain, status, eligibility_notes, estimated_value, deadline, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                project_name.strip(),
-                chain.strip(),
-                status,
-                eligibility_notes,
-                estimated_value,
-                deadline,
-                now,
-                now,
-            ),
+            f"INSERT INTO airdrops ({', '.join(cols)}) VALUES ({placeholders})",
+            vals,
         )
         return int(cur.lastrowid)
 
 
 def update_airdrop(airdrop_id: int, **fields: Any) -> None:
     db_path = fields.pop("db_path", None)
-    allowed = {"project_name", "chain", "status", "eligibility_notes", "estimated_value", "deadline"}
+    allowed = {
+        "project_name",
+        "chain",
+        "status",
+        "eligibility_notes",
+        "estimated_value",
+        "deadline",
+        "category",
+        "start_date",
+        "end_date",
+        "tge_date",
+        "token",
+        "eligibility",
+        "points",
+        "rank",
+        "wallet_used",
+        "official_website",
+        "docs_url",
+        "discord",
+        "twitter",
+        "telegram",
+        "claim_page",
+    }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return
+    if "status" in updates and updates["status"]:
+        s = str(updates["status"])
+        updates["status"] = _AIRDROP_STATUS_MAP.get(s.lower(), s)
     updates["updated_at"] = utc_now()
     cols = ", ".join(f"{k}=?" for k in updates)
     vals = list(updates.values()) + [airdrop_id]
@@ -312,6 +709,19 @@ def log_event(event_type: str, page_key: str = "", meta: str = "", db_path: Opti
     with connect(db_path) as conn:
         conn.execute(
             "INSERT INTO usage_events (event_type, page_key, meta, created_at) VALUES (?, ?, ?, ?)",
+            (event_type, page_key, meta, utc_now()),
+        )
+
+
+def log_analytics_event(
+    event_type: str,
+    page_key: str = "",
+    meta: str = "",
+    db_path: Optional[Path] = None,
+) -> None:
+    with connect(db_path) as conn:
+        conn.execute(
+            "INSERT INTO analytics_events (event_type, page_key, meta, created_at) VALUES (?, ?, ?, ?)",
             (event_type, page_key, meta, utc_now()),
         )
 

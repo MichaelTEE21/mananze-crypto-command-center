@@ -12,13 +12,14 @@ import streamlit as st
 
 from mccc.db import is_feature_enabled
 from mccc.demo_data import DEMO_PORTFOLIO, DEMO_PRICE_HISTORY, portfolio_summary
-from mccc.market import fetch_prices
-from mccc.ui import demo_callout, hero, page_setup, pro_locked_panel
+from mccc.portfolio import list_assets, compute_summary
+from mccc.market_provider import get_default_provider
+from mccc.ui import demo_callout, hero, page_setup, pro_locked_panel, session_user_id
 
 page_setup("analytics", "Analytics")
 hero("Analytics", "Simple charts on labelled DEMO series and/or live market snapshot.")
 
-prices, source, is_live = fetch_prices()
+prices, source, is_live = get_default_provider().get_prices()
 if is_live:
     st.success(f"Market bars source: {source}")
 else:
@@ -46,12 +47,35 @@ line = px.line(hist, x="day", y="price", title=f"{asset} DEMO trajectory", templ
 line.update_layout(paper_bgcolor="#0b0f14", plot_bgcolor="#141a22")
 st.plotly_chart(line, use_container_width=True)
 
-st.subheader("DEMO portfolio allocation")
-folio = pd.DataFrame(DEMO_PORTFOLIO)
-folio["value"] = folio["amount"] * folio["unit_value_usd"]
-pie = px.pie(folio, names="asset", values="value", title=f"DEMO portfolio · ${portfolio_summary()['total_usd']:,.0f}", template="plotly_dark")
-pie.update_layout(paper_bgcolor="#0b0f14")
-st.plotly_chart(pie, use_container_width=True)
+st.subheader("Portfolio allocation")
+assets = list_assets(user_id=session_user_id())
+if assets:
+    price_map, _, px_live = get_default_provider().price_map()
+    summary = compute_summary(assets, price_map, is_live=px_live)
+    pos = [p for p in summary["positions"] if p.get("value")]
+    if pos:
+        folio = pd.DataFrame(pos)
+        pie = px.pie(
+            folio, names="symbol", values="value",
+            title=f"Portfolio · ${summary['total_value']:,.0f} ({'LIVE' if summary['is_live'] else 'DEMO prices'})",
+            template="plotly_dark",
+        )
+        pie.update_layout(paper_bgcolor="#0b0f14")
+        st.plotly_chart(pie, use_container_width=True)
+    else:
+        demo_callout("Positions exist but lack priced values — showing DEMO sample.")
+        folio = pd.DataFrame(DEMO_PORTFOLIO)
+        folio["value"] = folio["amount"] * folio["unit_value_usd"]
+        pie = px.pie(folio, names="asset", values="value", title=f"DEMO portfolio · ${portfolio_summary()['total_usd']:,.0f}", template="plotly_dark")
+        pie.update_layout(paper_bgcolor="#0b0f14")
+        st.plotly_chart(pie, use_container_width=True)
+else:
+    demo_callout("No portfolio assets — DEMO allocation sample only.")
+    folio = pd.DataFrame(DEMO_PORTFOLIO)
+    folio["value"] = folio["amount"] * folio["unit_value_usd"]
+    pie = px.pie(folio, names="asset", values="value", title=f"DEMO portfolio · ${portfolio_summary()['total_usd']:,.0f}", template="plotly_dark")
+    pie.update_layout(paper_bgcolor="#0b0f14")
+    st.plotly_chart(pie, use_container_width=True)
 
 st.divider()
 st.subheader("PRO advanced analytics (architecture)")
