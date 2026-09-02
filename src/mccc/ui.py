@@ -345,7 +345,7 @@ def _pro_unlocked() -> bool:
 def page_setup(page_key: str, title: str, icon: str = "◆") -> None:
     st.set_page_config(
         page_title=f"{title} · MCCC",
-        page_icon="⬡",
+        page_icon="🏠",
         layout="wide",
         initial_sidebar_state="expanded",
     )
@@ -411,7 +411,7 @@ def page_setup(page_key: str, title: str, icon: str = "◆") -> None:
 def render_sidebar_nav() -> None:
     """Structured nav — reuses existing pages; Phase N placeholders labelled."""
     st.caption("Navigate")
-    st.page_link("app.py", label="Command Center", icon="⬡")
+    st.page_link("app.py", label="Command Center", icon="🏠")
     st.page_link("pages/18_Search.py", label="Search", icon="🔍")
     st.page_link("pages/24_Intelligence_Center.py", label="Intelligence", icon="🛰️")
     st.page_link("pages/3_Airdrop_Tracker.py", label="Airdrops", icon="🪂")
