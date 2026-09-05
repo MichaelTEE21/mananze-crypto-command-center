@@ -217,7 +217,8 @@ def render_sidebar_nav() -> None:
     st.markdown('<div class="mccc-nav-group">On-chain</div>', unsafe_allow_html=True)
     st.page_link("pages/4_Wallet_Tracking.py", label="Wallets", icon=NAV_ICONS["wallets"])
     st.page_link("pages/32_Chain_Explorers.py", label="On-chain", icon=NAV_ICONS["onchain"])
-    st.page_link("pages/19_Wallet_Directory.py", label="Wallet directory", icon="📒")
+    st.page_link("pages/19_Wallet_Directory.py", label="Wallet Hub", icon="📒")
+    st.page_link("pages/33_Crypto_Directory.py", label="Crypto Directory", icon="🗂️")
 
     st.markdown('<div class="mccc-nav-group">Research</div>', unsafe_allow_html=True)
     st.page_link("pages/6_Analytics.py", label="Analytics", icon=NAV_ICONS["analytics"])
@@ -241,8 +242,10 @@ def render_sidebar_nav() -> None:
 
     with st.expander("More", expanded=False):
         st.page_link("pages/27_Calendar.py", label="Calendar", icon="📅")
-        st.page_link("pages/20_Exchange_Directory.py", label="Exchanges", icon="🏦")
+        st.page_link("pages/20_Exchange_Directory.py", label="Exchange Hub", icon="🏦")
+        st.page_link("pages/34_DEX_Hub.py", label="DEX Hub", icon="🔄")
         st.page_link("pages/11_Partner_Directory.py", label="Partners", icon="🤝")
+        st.page_link("pages/35_Admin_Partner_Analytics.py", label="Partner Analytics", icon="📊")
         st.page_link("pages/5_Market_APIs.py", label="Market APIs", icon="🔌")
         st.page_link("pages/9_User_Analytics.py", label="Usage", icon="📉")
         st.page_link("pages/29_About.py", label="About", icon="ℹ️")
@@ -503,6 +506,7 @@ def quick_actions() -> None:
         st.page_link("pages/2_Project_Tracker.py", label="Projects", icon="📁")
         st.page_link("pages/25_RWA_Intelligence.py", label="RWA", icon="🏛️")
         st.page_link("pages/8_Education.py", label="Academy", icon="📚")
+        st.page_link("pages/33_Crypto_Directory.py", label="Crypto Directory", icon="🗂️")
         st.page_link("pages/28_Support_MCCC.py", label="Support MCCC", icon="💜")
 
 
@@ -517,28 +521,44 @@ def session_user_id():
 
 
 def partner_cta(link: dict, key_prefix: str = "partner", source_page: str = "") -> None:
-    """Render CTA: Track & open records a click, then primary link_button to resolved URL."""
-    from mccc.partners import cta_label, record_click, resolve_visit_url
+    """Render CTA via central partner routing — never hardcode referral URLs in pages."""
+    from mccc.partners import (
+        REFERRAL_LEAVE_DISCLOSURE,
+        cta_label,
+        record_click,
+        resolve_outbound,
+    )
 
-    url = resolve_visit_url(link)
-    label = cta_label(link.get("category", "Partner"))
-    is_ref = bool((link.get("referral_url") or "").strip())
+    decision = resolve_outbound(link, require_active=True)
+    url = decision["url"]
+    label = cta_label(link.get("category", "Tools"))
+    is_ref = bool(decision.get("used_referral"))
     dest_note = "Partner / referral destination" if is_ref else "Official website"
     lid = link["id"]
     open_key = f"{key_prefix}_open_{lid}"
     track_key = f"{key_prefix}_track_{lid}"
 
+    st.caption(REFERRAL_LEAVE_DISCLOSURE)
     st.caption(f"Outbound: **{dest_note}** · `{url}`")
+    if decision.get("official_url") and is_ref:
+        st.caption(f"Official (verify yourself): `{decision['official_url']}`")
     col_a, col_b = st.columns((1, 1))
     with col_a:
         if st.button("Track & open", key=track_key, use_container_width=True):
             try:
                 record_click(lid, source_page=source_page or key_prefix)
                 st.session_state[open_key] = url
-                st.success("Visit logged (no IP / fingerprint stored).")
+                st.success("Visit logged (platform / category / date only — no IP / fingerprint).")
             except Exception as exc:  # noqa: BLE001
                 st.error(f"Could not log visit: {exc}")
     with col_b:
         st.link_button(label, url, use_container_width=True)
     if st.session_state.get(open_key):
         st.link_button("Open now", st.session_state[open_key], type="primary", use_container_width=True)
+
+
+def referral_leave_disclosure() -> None:
+    """Show leave-to-external-platform disclosure on decision surfaces."""
+    from mccc.partners import REFERRAL_LEAVE_DISCLOSURE
+
+    st.info(REFERRAL_LEAVE_DISCLOSURE)

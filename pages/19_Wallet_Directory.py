@@ -14,6 +14,7 @@ from mccc.paths import EDUCATION_DIR
 from mccc.ui import (
     footer,
     affiliate_disclosure,
+    referral_leave_disclosure,
     empty_state,
     hero,
     page_setup,
@@ -22,15 +23,16 @@ from mccc.ui import (
     seed_phrase_warning,
 )
 
-page_setup("wallet_directory", "Wallet Directory")
+page_setup("wallet_directory", "Wallet Hub")
 hero(
-    "Wallet Directory",
-    "Educational directory of wallet tools — research convenience only. MCCC never asks for seeds or keys.",
+    "Wallet Hub",
+    "Educational wallet listings from central Partner Links — research only. MCCC never asks for seeds or keys.",
     show_demo_banner=True,
 )
 
 init_db()
 affiliate_disclosure()
+referral_leave_disclosure()
 seed_phrase_warning()
 
 st.error(
@@ -74,12 +76,12 @@ st.markdown(
 """
 )
 
-section_header("Partner directory — Wallet category", "Active Wallet partners from the central Partner Links DB")
-wallets = list_partner_links(status="Active", category="Wallet")
+section_header("Partner directory — Wallets", "Active Wallets category from the central Partner Links DB")
+wallets = list_partner_links(status="Active", category="Wallets")
 if not wallets:
     empty_state(
-        "No Active Wallet partners yet",
-        "Admin can add Wallet category rows on Admin Partner Links. DEMO seeds appear on first launch.",
+        "No Active Wallets partners yet",
+        "Admin can add Wallets category rows on Admin Partner Links. DEMO seeds appear on first launch.",
     )
 else:
     for link in wallets:
@@ -115,4 +117,4 @@ else:
 
 st.caption("Listings are for research convenience — not endorsements of safety or profitability.")
 
-footer("Wallet Directory")
+footer("Wallet Hub")

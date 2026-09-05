@@ -7,7 +7,7 @@ DON'T JUST WATCH CRYPTO. UNDERSTAND IT. · Search. Analyse. Learn. Monitor. Act.
 Premium local Streamlit dashboard for crypto intelligence & education.
 Built for **B=MananzeZA**. Never stores seed phrases, private keys, or passwords.
 
-**Version:** `2.5.0`
+**Version:** `2.6.0`
 
 ## What works out of the box
 
@@ -134,9 +134,12 @@ mccc/
   .env.example
 ```
 
-## Partner Links
+## Partner Links (v2.6 Partner Ecosystem)
 
 Central SQLite `partner_links` + `partner_link_clicks` (no IP / UA / PII).
+
+Categories: **Wallets · CEX · DEX · Explorers · Tools · Education**.
+Crypto Directory + Wallet/Exchange/DEX Hubs route Join/Download via `partners.resolve_outbound` (active referral URL else official). Postgres migration is documented for later — SQLite remains default.
 
 - **Public:** Partner Directory / Start Here — Active only. Affiliate disclosure + seed-phrase warning.
 - **Admin:** password via `MCCC_ADMIN_PASSWORD` **or** signed-in `is_admin` user.

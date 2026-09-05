@@ -25,7 +25,7 @@ from mccc.announcements import list_published as list_announcements
 from mccc.db import init_db, list_airdrops, list_projects, list_wallets, usage_summary
 from mccc.demo_data import DEMO_PORTFOLIO, portfolio_summary as demo_portfolio_summary
 from mccc.notifications import list_notifications, unread_count
-from mccc.partners import SEED_PHRASE_WARNING, list_partner_links
+from mccc.partners import SEED_PHRASE_WARNING, list_partner_links, partner_ecosystem_summary
 from mccc.portfolio import compute_summary, list_assets
 from mccc.services.market import get_default_provider
 from mccc.universal_search import (
@@ -244,6 +244,7 @@ watch = list_watchlist(user_id=uid)
 assets = list_assets(user_id=uid)
 usage = usage_summary()
 partner_count = len(list_partner_links(status="Active"))
+partner_summary = partner_ecosystem_summary()
 unread = unread_count(user_id=uid)
 notifs = list_notifications(user_id=uid, unread_only=True)[:5]
 announcements = list_announcements(limit=5)
@@ -370,14 +371,39 @@ else:
         "Admin / settings can publish announcements later — empty is OK.",
     )
 
-# --- Partners strip ---
+# --- Partner ecosystem (v2.6) ---
+section_header("Partner ecosystem", "Crypto Directory hubs — DEMO listings labelled; central link routing")
+_by = partner_summary.get("by_category") or {}
+pe1, pe2, pe3, pe4, pe5, pe6 = st.columns(6)
+with pe1:
+    metric_card(str(_by.get("Wallets", 0)), "Wallets")
+with pe2:
+    metric_card(str(_by.get("CEX", 0)), "CEX")
+with pe3:
+    metric_card(str(_by.get("DEX", 0)), "DEX")
+with pe4:
+    metric_card(str(_by.get("Explorers", 0)), "Explorers")
+with pe5:
+    metric_card(str(_by.get("Tools", 0)), "Tools")
+with pe6:
+    metric_card(str(_by.get("Education", 0)), "Education")
 st.markdown(
     f'<div class="mccc-card"><span class="mccc-badge">PARTNERS</span>'
-    f'<p style="margin:0.35rem 0 0;color:#e8eef5;"><strong>Platform Directory</strong> · {partner_count} active</p>'
+    f'<p style="margin:0.35rem 0 0;color:#e8eef5;"><strong>Crypto Directory</strong> · {partner_count} active · '
+    f'{partner_summary.get("total_clicks", 0)} clicks (aggregate)</p>'
     f'<p style="margin:0.15rem 0 0;color:#9aa7b5;font-size:0.85rem;">'
-    f'Wallets, CEX, DEX, tools &amp; partners — open Partner Directory.</p></div>',
+    f'Join/Download routes via partner service — referral ≠ safer. DEMO labelled.</p></div>',
     unsafe_allow_html=True,
 )
+pc1, pc2, pc3, pc4 = st.columns(4)
+with pc1:
+    st.page_link("pages/33_Crypto_Directory.py", label="Crypto Directory", icon="🗂️")
+with pc2:
+    st.page_link("pages/19_Wallet_Directory.py", label="Wallet Hub", icon="👛")
+with pc3:
+    st.page_link("pages/20_Exchange_Directory.py", label="Exchange Hub", icon="🏦")
+with pc4:
+    st.page_link("pages/34_DEX_Hub.py", label="DEX Hub", icon="🔄")
 affiliate_disclosure_short()
 
 # --- Research activity ---

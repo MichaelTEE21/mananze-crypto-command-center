@@ -66,7 +66,7 @@ st.divider()
 st.subheader("Approved wallets & CEX (Partner Directory)")
 st.caption("Links resolve via partners.resolve — never hardcoded referral URLs in this page.")
 
-for cat, title in [("Wallet", "Wallets"), ("CEX", "Centralized exchanges")]:
+for cat, title in [("Wallets", "Wallets"), ("CEX", "Centralized exchanges")]:
     st.markdown(f"### {title}")
     links = list_partner_links(status="Active", category=cat)
     if not links:

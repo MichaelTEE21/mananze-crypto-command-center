@@ -90,7 +90,7 @@ if not st.session_state["wallet_beginner_ok"]:
 
 with st.expander("Approved wallets (Partner Directory)", expanded=False):
     affiliate_disclosure()
-    wallets_partners = list_partner_links(status="Active", category="Wallet")
+    wallets_partners = list_partner_links(status="Active", category="Wallets")
     if not wallets_partners:
         st.caption("No Active Wallet partners in the central directory yet.")
     else:

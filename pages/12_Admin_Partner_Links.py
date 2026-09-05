@@ -79,14 +79,12 @@ st.success("Admin unlocked (session).")
 # --- Analytics ---
 st.subheader("Click analytics (aggregated only)")
 analytics = click_analytics()
-m1, m2, m3, m4, m5, m6 = st.columns(6)
-m1.metric("Total clicks", analytics["total_clicks"])
 per_cat = analytics["per_category"]
-m2.metric("Wallet", per_cat.get("Wallet", 0))
-m3.metric("CEX", per_cat.get("CEX", 0))
-m4.metric("DEX", per_cat.get("DEX", 0))
-m5.metric("Tool", per_cat.get("Crypto Tool", 0))
-m6.metric("Partner", per_cat.get("Partner", 0))
+mcols = st.columns(7)
+mcols[0].metric("Total clicks", analytics["total_clicks"])
+for i, cat in enumerate(CATEGORIES):
+    mcols[i + 1].metric(cat[:8], per_cat.get(cat, 0))
+st.page_link("pages/35_Admin_Partner_Analytics.py", label="Open Partner Analytics", icon="📊")
 
 plat_df = pd.DataFrame(analytics["per_platform"])
 if not plat_df.empty:

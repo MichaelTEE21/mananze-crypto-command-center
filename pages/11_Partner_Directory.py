@@ -1,4 +1,4 @@
-"""Stage 11 — Partner / platform directory (Active links only)."""
+"""Partner / platform directory (Active links only) — routes via central partners service."""
 from __future__ import annotations
 
 import sys
@@ -9,32 +9,34 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import streamlit as st
 
 from mccc.db import init_db
-from mccc.partners import CATEGORIES, list_partner_links
-from mccc.ui import affiliate_disclosure, hero, page_setup, partner_cta, seed_phrase_warning, footer
+from mccc.partners import CATEGORIES, list_partner_links, section_title
+from mccc.ui import (
+    affiliate_disclosure,
+    footer,
+    hero,
+    page_setup,
+    partner_cta,
+    referral_leave_disclosure,
+    seed_phrase_warning,
+)
 
 page_setup("partner_directory", "Partner Directory")
 hero(
     "Platform Directory",
-    "Wallets, exchanges, DEX, tools & partners — links from the central DB only. DEMO rows are labelled.",
+    "Wallets, CEX, DEX, Explorers, Tools & Education — links from the central DB only. DEMO rows are labelled.",
     show_demo_banner=True,
 )
 
 init_db()
 affiliate_disclosure()
+referral_leave_disclosure()
 seed_phrase_warning()
 
 st.caption(
     "Listings are for research convenience. Referral placement does **not** mean a platform is "
     "safer, better, or more profitable."
 )
-
-SECTION_META = {
-    "Wallet": ("WALLETS", "Download / Visit Wallet"),
-    "CEX": ("CENTRALIZED EXCHANGES", "Join Exchange"),
-    "DEX": ("DECENTRALIZED EXCHANGES", "Explore DEX"),
-    "Crypto Tool": ("CRYPTO TOOLS", "Visit Platform"),
-    "Partner": ("PARTNERS", "Visit Platform"),
-}
+st.page_link("pages/33_Crypto_Directory.py", label="Open full Crypto Directory", icon="🗂️")
 
 active = list_partner_links(status="Active")
 by_cat: dict[str, list] = {c: [] for c in CATEGORIES}
@@ -42,7 +44,7 @@ for link in active:
     by_cat.setdefault(link["category"], []).append(link)
 
 for cat in CATEGORIES:
-    title, _ = SECTION_META[cat]
+    title = section_title(cat)
     links = by_cat.get(cat, [])
     st.subheader(title)
     if not links:
@@ -59,7 +61,12 @@ for cat in CATEGORIES:
                         st.caption("logo")
             with cols[1]:
                 badge = "REFERRAL" if link.get("is_referral") else "OFFICIAL"
-                demo_tag = " · DEMO" if "DEMO" in (link.get("name") or "").upper() or "DEMO" in (link.get("description") or "").upper() else ""
+                demo_tag = (
+                    " · DEMO"
+                    if "DEMO" in (link.get("name") or "").upper()
+                    or "DEMO" in (link.get("description") or "").upper()
+                    else ""
+                )
                 st.markdown(
                     f"**{link['name']}** · `{link['category']}` "
                     f'<span class="mccc-badge">{badge}{demo_tag}</span>',
@@ -74,7 +81,9 @@ for cat in CATEGORIES:
                     meta_bits.append(f"**Networks:** {link['networks']}")
                 if meta_bits:
                     st.caption(" · ".join(meta_bits))
-                st.markdown(f"**Official website (verify):** [{link['official_url']}]({link['official_url']})")
+                st.markdown(
+                    f"**Official website (verify):** [{link['official_url']}]({link['official_url']})"
+                )
                 partner_cta(link, key_prefix="dir", source_page="partner_directory")
         st.divider()
 

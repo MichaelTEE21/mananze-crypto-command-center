@@ -22,13 +22,16 @@ from mccc.exchanges import (
     set_exchange_status,
     update_exchange,
 )
+from mccc.partners import list_partner_links
 from mccc.ui import (
-    footer,
     affiliate_disclosure,
     demo_callout,
     empty_state,
+    footer,
     hero,
     page_setup,
+    partner_cta,
+    referral_leave_disclosure,
     section_header,
     seed_phrase_warning,
 )
@@ -49,22 +52,26 @@ def _is_admin() -> bool:
     return False
 
 
-page_setup("exchange_directory", "Exchange Directory")
+page_setup("exchange_directory", "Exchange Hub")
 hero(
-    "Exchange Directory",
-    "CEX / DEX research listings from the local `exchanges` table. official_url ≠ hardcoded referral.",
+    "Exchange Hub",
+    "CEX / DEX research listings — exchanges table + Partner Links CEX. official_url ≠ hardcoded referral.",
     show_demo_banner=True,
 )
 
 init_db()
 seed_demo_exchanges()
 affiliate_disclosure()
+referral_leave_disclosure()
 seed_phrase_warning()
 demo_callout("DEMO rows use example.com — not live trading venues. Verify every URL yourself.")
 
+st.error(
+    "SECURITY: MCCC never asks for seed phrases, private keys, exchange passwords, or 2FA secrets. "
+    "Verify every outbound URL yourself before signing up."
+)
 st.caption(
-    "Referral placement does **not** mean an exchange is safer or better. "
-    "MCCC never asks for exchange passwords or 2FA secrets."
+    "Referral placement does **not** mean an exchange is safer or better."
 )
 
 # Filters
@@ -259,4 +266,20 @@ else:
                 st.warning("Deleted.")
                 st.rerun()
 
-footer("Exchange Directory")
+st.divider()
+st.subheader("Partner Links — CEX (central routing)")
+st.caption("Resolved via partners service — never hardcoded on this page.")
+_cex = list_partner_links(status="Active", category="CEX")
+if not _cex:
+    empty_state("No Active CEX partners", "Add via Admin Partner Links.")
+else:
+    for link in _cex:
+        st.markdown(f"**{link['name']}**")
+        if link.get("description"):
+            st.write(link["description"])
+        st.markdown(f"Official (verify): [{link['official_url']}]({link['official_url']})")
+        partner_cta(link, key_prefix="ex_hub_cex", source_page="exchange_hub")
+        st.divider()
+
+st.page_link("pages/34_DEX_Hub.py", label="Open DEX Hub", icon="🔄")
+footer("Exchange Hub")

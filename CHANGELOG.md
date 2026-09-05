@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.6.0 — Partner Ecosystem (Crypto Directory · Hubs · Analytics)
+
+- Crypto Directory (`33_Crypto_Directory.py`) — Wallets / CEX / DEX / Explorers / Tools / Education
+- Central partner-link service: `resolve_outbound` / `get_outbound_url` (referral if set else official; disabled → official)
+- Referral leave disclosure on decision surfaces; affiliate disclosure retained
+- Wallet Hub / Exchange Hub / DEX Hub — never-ask-keys banners; CTAs via `partner_cta`
+- Admin Partner Links CRUD extended for new categories; Partner Analytics page (`35_`) — platform / category / date aggregates, no PII
+- Command Center partner ecosystem strip with category counts + hub links (DEMO labelled)
+- Legacy category migration (Wallet→Wallets, Crypto Tool/Partner→Tools, Explorer→Explorers); SQLite kept; Postgres noted for later
+- Tests expanded (partner CRUD, routing, fallback, disclosure, analytics, directories, security)
+- Version `2.6.0`
+
 ## 2.4.0 — Phase 1 Foundation (Command Center · Universal Search · Calendar · Tokens)
 
 - Command Center front door: hero, universal search, **ANALYSE** CTA, philosophy line

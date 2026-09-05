@@ -514,6 +514,29 @@ def _migrate_schema(conn: sqlite3.Connection) -> None:
 
     _ensure_column(conn, "partner_link_clicks", "source_page", "TEXT DEFAULT ''")
 
+    # v2.6.0 — normalize legacy partner categories (Wallet→Wallets, etc.)
+    try:
+        from mccc.partners import migrate_partner_categories
+        # migrate uses its own connect; do inline UPDATE here to stay in this txn
+        alias = {
+            "Wallet": "Wallets",
+            "Crypto Tool": "Tools",
+            "Partner": "Tools",
+            "Explorer": "Explorers",
+        }
+        for old, new in alias.items():
+            conn.execute(
+                "UPDATE partner_links SET category=? WHERE category=?",
+                (new, old),
+            )
+            conn.execute(
+                "UPDATE partner_link_clicks SET category=? WHERE category=?",
+                (new, old),
+            )
+    except Exception:
+        pass
+
+
     # Normalize project stages (legacy Title Case / aliases → canonical)
     rows = conn.execute("SELECT id, status, stage FROM projects").fetchall()
     for r in rows:
