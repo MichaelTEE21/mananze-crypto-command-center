@@ -8,6 +8,8 @@ from mananze_os.compiler import CompiledPlan, IntelligenceCompiler
 from mananze_os.domain_qa import DomainQA, QAVerdict
 from mananze_os.input_gate import InputGate
 from mananze_os.input_request import InputRequest
+from mananze_os.policy_decision import PolicyDecision
+from mananze_os.policy_engine import PolicyEngine
 from mananze_os.workforce_planner import (
     DynamicWorkforcePlan,
     WorkforcePlanner,
@@ -36,6 +38,7 @@ class RuntimeResult:
     work_order: WorkOrder
     plan: CompiledPlan
     workforce: DynamicWorkforcePlan
+    policy: PolicyDecision
     qa: QAVerdict
     approval: ApprovalDecision
     report: RuntimeReport | None = None
@@ -48,6 +51,7 @@ class MananzeRuntime:
         self.input_gate = InputGate()
         self.compiler = IntelligenceCompiler()
         self.workforce_planner = WorkforcePlanner()
+        self.policy_engine = PolicyEngine()
         self.domain_qa = DomainQA()
         self.approval_gate = ApprovalGate()
 
@@ -60,6 +64,14 @@ class MananzeRuntime:
             work_order.work_order_id,
             plan.objective,
         )
+
+        policy = self.policy_engine.evaluate(workforce)
+
+        if policy.effect == "deny":
+            raise PermissionError(
+                "policy denied execution: "
+                + "; ".join(policy.reasons)
+            )
 
         qa = self.domain_qa.verify(workforce)
 
@@ -75,6 +87,7 @@ class MananzeRuntime:
             work_order=work_order,
             plan=plan,
             workforce=workforce,
+            policy=policy,
             qa=qa,
             approval=approval,
         )
@@ -84,6 +97,12 @@ class MananzeRuntime:
         prepared: RuntimeResult,
         approved_by: str,
     ) -> RuntimeResult:
+        if prepared.policy.effect == "deny":
+            raise PermissionError(
+                "policy denied execution: "
+                + "; ".join(prepared.policy.reasons)
+            )
+
         if prepared.approval.status != "pending":
             raise ValueError("execution requires pending approval")
 
@@ -97,9 +116,22 @@ class MananzeRuntime:
         evidence = (
             ExecutionEvidence(
                 execution_id=execution_id,
+                action="policy_decision",
+                status=prepared.policy.effect,
+                details=(
+                    f"risk={prepared.policy.risk}; "
+                    f"autonomy_level={prepared.policy.autonomy_level}; "
+                    f"reasons={' | '.join(prepared.policy.reasons)}"
+                ),
+            ),
+            ExecutionEvidence(
+                execution_id=execution_id,
                 action="controlled_execution",
                 status="completed",
-                details="Execution simulation completed without external side effects.",
+                details=(
+                    "Execution simulation completed without "
+                    "external side effects."
+                ),
             ),
         )
 
@@ -114,6 +146,7 @@ class MananzeRuntime:
             work_order=prepared.work_order,
             plan=prepared.plan,
             workforce=prepared.workforce,
+            policy=prepared.policy,
             qa=prepared.qa,
             approval=approved,
             report=report,
