@@ -134,3 +134,42 @@ def test_fabric_rejects_unknown_assignment_lookup() -> None:
         match="unknown workforce assignment: missing-assignment",
     ):
         fabric.get_assignment("missing-assignment")
+
+
+def test_fabric_assignment_list_is_immutable_snapshot() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role())
+
+    assignment = fabric.assign_role(
+        assignment_id="assignment-1",
+        execution_id="execution-1",
+        node_id="node-1",
+        role_id="role-1",
+    )
+
+    assignments = fabric.list_assignments()
+
+    assert isinstance(assignments, tuple)
+    assert assignments == (assignment,)
+
+    with pytest.raises(AttributeError):
+        assignments.append(assignment)  # type: ignore[attr-defined]
+
+    assert fabric.list_assignments() == (assignment,)
+
+
+def test_fabric_assignment_record_is_immutable() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role())
+
+    assignment = fabric.assign_role(
+        assignment_id="assignment-1",
+        execution_id="execution-1",
+        node_id="node-1",
+        role_id="role-1",
+    )
+
+    with pytest.raises(AttributeError):
+        assignment.role_id = "role-2"  # type: ignore[misc]
+
+    assert fabric.get_assignment("assignment-1") == assignment
