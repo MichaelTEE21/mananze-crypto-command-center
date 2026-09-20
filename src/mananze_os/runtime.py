@@ -1,4 +1,4 @@
-﻿"""Mananze OS controlled runtime foundation."""
+"""Mananze OS controlled runtime foundation."""
 
 from dataclasses import dataclass
 
@@ -11,6 +11,13 @@ from mananze_os.authorization import (
 )
 from mananze_os.compiler import CompiledPlan, IntelligenceCompiler
 from mananze_os.domain_qa import DomainQA, QAVerdict
+from mananze_os.execution_evidence import ExecutionEvidence
+from mananze_os.execution_lifecycle import ExecutionLifecycle
+from mananze_os.execution_state import ExecutionState
+from mananze_os.execution_verifier import (
+    ExecutionVerification,
+    ExecutionVerifier,
+)
 from mananze_os.input_gate import InputGate
 from mananze_os.input_request import InputRequest
 from mananze_os.permission import CapabilityPermission
@@ -25,19 +32,12 @@ from mananze_os.work_order import WorkOrder
 
 
 @dataclass(frozen=True)
-class ExecutionEvidence:
-    execution_id: str
-    action: str
-    status: str
-    details: str
-
-
-@dataclass(frozen=True)
 class RuntimeReport:
     work_order_id: str
     execution_id: str
     status: str
     evidence: tuple[ExecutionEvidence, ...]
+    verification: ExecutionVerification
 
 
 @dataclass(frozen=True)
@@ -49,6 +49,7 @@ class RuntimeResult:
     authorization: AuthorizationDecision
     qa: QAVerdict
     approval: ApprovalDecision
+    execution_state: ExecutionState
     report: RuntimeReport | None = None
 
 
@@ -68,6 +69,8 @@ class MananzeRuntime:
         self.authorization_engine = AuthorizationEngine()
         self.domain_qa = DomainQA()
         self.approval_gate = ApprovalGate()
+        self.execution_lifecycle = ExecutionLifecycle()
+        self.execution_verifier = ExecutionVerifier()
         self.tenants = tenants
         self.authorities = authorities
         self.permissions = permissions
@@ -131,6 +134,16 @@ class MananzeRuntime:
         if not qa.passed:
             raise ValueError("domain QA failed")
 
+        execution_state = ExecutionState(
+            execution_id=execution_id,
+            status="created",
+        )
+
+        execution_state, _ = self.execution_lifecycle.transition(
+            execution_state,
+            "pending_approval",
+        )
+
         approval = self.approval_gate.request(
             execution_id,
             qa,
@@ -144,6 +157,7 @@ class MananzeRuntime:
             authorization=authorization,
             qa=qa,
             approval=approval,
+            execution_state=execution_state,
         )
 
     def execute(
@@ -166,9 +180,27 @@ class MananzeRuntime:
         if prepared.approval.status != "pending":
             raise ValueError("execution requires pending approval")
 
+        if (
+            prepared.execution_state.execution_id
+            != prepared.approval.execution_id
+        ):
+            raise ValueError(
+                "execution state and approval execution IDs do not match"
+            )
+
         approved = self.approval_gate.approve(
             prepared.approval,
             approved_by,
+        )
+
+        execution_state, _ = self.execution_lifecycle.transition(
+            prepared.execution_state,
+            "approved",
+        )
+
+        execution_state, _ = self.execution_lifecycle.transition(
+            execution_state,
+            "running",
         )
 
         execution_id = approved.execution_id
@@ -206,11 +238,28 @@ class MananzeRuntime:
             ),
         )
 
+        execution_state, _ = self.execution_lifecycle.transition(
+            execution_state,
+            "completed",
+        )
+
+        verification = self.execution_verifier.verify(
+            execution_state,
+            evidence,
+        )
+
+        if not verification.verified:
+            raise RuntimeError(
+                "execution verification failed: "
+                + "; ".join(verification.reasons)
+            )
+
         report = RuntimeReport(
             work_order_id=prepared.work_order.work_order_id,
             execution_id=execution_id,
-            status="completed",
+            status=execution_state.status,
             evidence=evidence,
+            verification=verification,
         )
 
         return RuntimeResult(
@@ -221,6 +270,7 @@ class MananzeRuntime:
             authorization=prepared.authorization,
             qa=prepared.qa,
             approval=approved,
+            execution_state=execution_state,
             report=report,
         )
 
