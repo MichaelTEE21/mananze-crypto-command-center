@@ -56,10 +56,81 @@ def test_fabric_assigns_registered_role() -> None:
 def test_fabric_rejects_unknown_role_assignment() -> None:
     fabric = WorkforceFabric()
 
-    with pytest.raises((KeyError, ValueError)):
+    with pytest.raises(KeyError):
         fabric.assign_role(
             assignment_id="assignment-1",
             execution_id="execution-1",
             node_id="node-1",
             role_id="missing-role",
         )
+
+
+def test_fabric_retrieves_assignment() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role())
+
+    assignment = fabric.assign_role(
+        assignment_id="assignment-1",
+        execution_id="execution-1",
+        node_id="node-1",
+        role_id="role-1",
+    )
+
+    assert fabric.get_assignment("assignment-1") == assignment
+
+
+def test_fabric_lists_assignments() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role("role-1"))
+    fabric.register_role(make_role("role-2"))
+
+    assignment_one = fabric.assign_role(
+        assignment_id="assignment-1",
+        execution_id="execution-1",
+        node_id="node-1",
+        role_id="role-1",
+    )
+    assignment_two = fabric.assign_role(
+        assignment_id="assignment-2",
+        execution_id="execution-1",
+        node_id="node-2",
+        role_id="role-2",
+    )
+
+    assert fabric.list_assignments() == (
+        assignment_one,
+        assignment_two,
+    )
+
+
+def test_fabric_rejects_duplicate_assignment() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role())
+
+    fabric.assign_role(
+        assignment_id="assignment-1",
+        execution_id="execution-1",
+        node_id="node-1",
+        role_id="role-1",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="assignment already exists: assignment-1",
+    ):
+        fabric.assign_role(
+            assignment_id="assignment-1",
+            execution_id="execution-2",
+            node_id="node-2",
+            role_id="role-1",
+        )
+
+
+def test_fabric_rejects_unknown_assignment_lookup() -> None:
+    fabric = WorkforceFabric()
+
+    with pytest.raises(
+        KeyError,
+        match="unknown workforce assignment: missing-assignment",
+    ):
+        fabric.get_assignment("missing-assignment")

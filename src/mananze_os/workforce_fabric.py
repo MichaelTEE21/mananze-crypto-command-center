@@ -17,6 +17,7 @@ class WorkforceFabric:
         self.assignment_planner = WorkforceAssignmentPlanner(
             self.registry
         )
+        self._assignments: dict[str, WorkforceAssignment] = {}
 
     def register_role(self, role: WorkforceRole) -> None:
         self.registry.register(role)
@@ -34,12 +35,34 @@ class WorkforceFabric:
         node_id: str,
         role_id: str,
     ) -> WorkforceAssignment:
-        return self.assignment_planner.assign(
+        if assignment_id in self._assignments:
+            raise ValueError(
+                f"assignment already exists: {assignment_id}"
+            )
+
+        assignment = self.assignment_planner.assign(
             assignment_id=assignment_id,
             execution_id=execution_id,
             node_id=node_id,
             role_id=role_id,
         )
+
+        self._assignments[assignment.assignment_id] = assignment
+        return assignment
+
+    def get_assignment(
+        self,
+        assignment_id: str,
+    ) -> WorkforceAssignment:
+        try:
+            return self._assignments[assignment_id]
+        except KeyError:
+            raise KeyError(
+                f"unknown workforce assignment: {assignment_id}"
+            ) from None
+
+    def list_assignments(self) -> tuple[WorkforceAssignment, ...]:
+        return tuple(self._assignments.values())
 
 
 __all__ = ["WorkforceFabric"]
