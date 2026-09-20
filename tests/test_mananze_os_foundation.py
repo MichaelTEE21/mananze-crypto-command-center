@@ -379,3 +379,60 @@ def test_mananze_runtime_end_to_end():
 
 
 
+
+
+def test_mananze_runtime_registers_planned_roles_in_workforce_fabric():
+    request = InputRequest(
+        request_id="WO-FABRIC-001",
+        tenant_id="dentist-demo",
+        actor_id="human:tshepo",
+        objective="Increase dental practice patient bookings",
+    )
+
+    capabilities = (
+        "marketing",
+        "lead_generation",
+        "sales",
+        "appointment_booking",
+        "customer_communications",
+        "retention",
+        "revenue",
+        "reporting",
+    )
+
+    runtime = MananzeRuntime(
+        tenants=(
+            Tenant(
+                tenant_id="dentist-demo",
+                name="Dentist Demo",
+            ),
+        ),
+        authorities=(
+            Authority(
+                actor_id="human:tshepo",
+                level="human",
+                can_execute=True,
+                requires_approval=True,
+            ),
+        ),
+        permissions=tuple(
+            CapabilityPermission(
+                actor_id="human:tshepo",
+                tenant_id="dentist-demo",
+                capability_id=capability_id,
+            )
+            for capability_id in capabilities
+        ),
+    )
+
+    prepared = runtime.prepare(request)
+
+    assert [
+        role.role_id
+        for role in runtime.workforce_fabric.list_roles()
+    ] == list(capabilities)
+
+    assert [
+        runtime.workforce_fabric.get_role(role.role_id).capability_ids
+        for role in prepared.workforce.roles
+    ] == [(capability_id,) for capability_id in capabilities]

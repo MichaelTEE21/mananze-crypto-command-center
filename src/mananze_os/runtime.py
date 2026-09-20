@@ -29,6 +29,8 @@ from mananze_os.workforce_planner import (
     WorkforcePlanner,
 )
 from mananze_os.work_order import WorkOrder
+from mananze_os.workforce_fabric import WorkforceFabric
+from mananze_os.workforce_role import WorkforceRole
 
 
 @dataclass(frozen=True)
@@ -65,6 +67,7 @@ class MananzeRuntime:
         self.input_gate = InputGate()
         self.compiler = IntelligenceCompiler()
         self.workforce_planner = WorkforcePlanner()
+        self.workforce_fabric = WorkforceFabric()
         self.policy_engine = PolicyEngine()
         self.authorization_engine = AuthorizationEngine()
         self.domain_qa = DomainQA()
@@ -102,6 +105,16 @@ class MananzeRuntime:
             work_order.work_order_id,
             plan.objective,
         )
+
+        for planned_role in workforce.roles:
+            self.workforce_fabric.register_role(
+                WorkforceRole(
+                    role_id=planned_role.role_id,
+                    name=planned_role.name,
+                    description=planned_role.objective,
+                    capability_ids=(planned_role.capability_id,),
+                )
+            )
 
         policy = self.policy_engine.evaluate(workforce)
 
