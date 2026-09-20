@@ -173,3 +173,54 @@ def test_fabric_assignment_record_is_immutable() -> None:
         assignment.role_id = "role-2"  # type: ignore[misc]
 
     assert fabric.get_assignment("assignment-1") == assignment
+
+
+def test_fabric_lists_assignments_for_execution() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role("role-1"))
+    fabric.register_role(make_role("role-2"))
+
+    assignment_one = fabric.assign_role(
+        assignment_id="assignment-1",
+        execution_id="execution-1",
+        node_id="node-1",
+        role_id="role-1",
+    )
+    assignment_two = fabric.assign_role(
+        assignment_id="assignment-2",
+        execution_id="execution-1",
+        node_id="node-2",
+        role_id="role-2",
+    )
+    assignment_three = fabric.assign_role(
+        assignment_id="assignment-3",
+        execution_id="execution-2",
+        node_id="node-3",
+        role_id="role-1",
+    )
+
+    assert fabric.list_assignments_for_execution("execution-1") == (
+        assignment_one,
+        assignment_two,
+    )
+    assert fabric.list_assignments_for_execution("execution-2") == (
+        assignment_three,
+    )
+
+
+def test_fabric_returns_empty_assignments_for_unknown_execution() -> None:
+    fabric = WorkforceFabric()
+
+    assert fabric.list_assignments_for_execution(
+        "missing-execution"
+    ) == ()
+
+
+def test_fabric_rejects_blank_execution_lookup() -> None:
+    fabric = WorkforceFabric()
+
+    with pytest.raises(
+        ValueError,
+        match="execution_id is required",
+    ):
+        fabric.list_assignments_for_execution("")

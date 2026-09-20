@@ -64,5 +64,18 @@ class WorkforceFabric:
     def list_assignments(self) -> tuple[WorkforceAssignment, ...]:
         return tuple(self._assignments.values())
 
+    def list_assignments_for_execution(
+        self,
+        execution_id: str,
+    ) -> tuple[WorkforceAssignment, ...]:
+        if not execution_id.strip():
+            raise ValueError("execution_id is required")
+
+        return tuple(
+            assignment
+            for assignment in self._assignments.values()
+            if assignment.execution_id == execution_id
+        )
+
 
 __all__ = ["WorkforceFabric"]
