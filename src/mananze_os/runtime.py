@@ -116,6 +116,20 @@ class MananzeRuntime:
                 )
             )
 
+        execution_id = f"exec:{work_order.work_order_id}"
+
+        for planned_role in workforce.roles:
+            self.workforce_fabric.assign_role(
+                assignment_id=(
+                    f"assignment:"
+                    f"{work_order.work_order_id}:"
+                    f"{planned_role.role_id}"
+                ),
+                execution_id=execution_id,
+                node_id=f"node:{planned_role.role_id}",
+                role_id=planned_role.role_id,
+            )
+
         policy = self.policy_engine.evaluate(workforce)
 
         if policy.effect == "deny":

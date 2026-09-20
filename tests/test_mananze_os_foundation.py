@@ -436,3 +436,80 @@ def test_mananze_runtime_registers_planned_roles_in_workforce_fabric():
         runtime.workforce_fabric.get_role(role.role_id).capability_ids
         for role in prepared.workforce.roles
     ] == [(capability_id,) for capability_id in capabilities]
+
+
+def test_mananze_runtime_creates_execution_scoped_workforce_assignments():
+    request = InputRequest(
+        request_id="WO-ASSIGN-001",
+        tenant_id="dentist-demo",
+        actor_id="human:tshepo",
+        objective="Increase dental practice patient bookings",
+    )
+
+    capabilities = (
+        "marketing",
+        "lead_generation",
+        "sales",
+        "appointment_booking",
+        "customer_communications",
+        "retention",
+        "revenue",
+        "reporting",
+    )
+
+    runtime = MananzeRuntime(
+        tenants=(
+            Tenant(
+                tenant_id="dentist-demo",
+                name="Dentist Demo",
+            ),
+        ),
+        authorities=(
+            Authority(
+                actor_id="human:tshepo",
+                level="human",
+                can_execute=True,
+                requires_approval=True,
+            ),
+        ),
+        permissions=tuple(
+            CapabilityPermission(
+                actor_id="human:tshepo",
+                tenant_id="dentist-demo",
+                capability_id=capability_id,
+            )
+            for capability_id in capabilities
+        ),
+    )
+
+    prepared = runtime.prepare(request)
+
+    assignments = runtime.workforce_fabric.list_assignments_for_execution(
+        "exec:WO-ASSIGN-001"
+    )
+
+    assert len(assignments) == len(capabilities)
+    assert [
+        assignment.assignment_id
+        for assignment in assignments
+    ] == [
+        f"assignment:WO-ASSIGN-001:{capability_id}"
+        for capability_id in capabilities
+    ]
+    assert [
+        assignment.node_id
+        for assignment in assignments
+    ] == [
+        f"node:{capability_id}"
+        for capability_id in capabilities
+    ]
+    assert [
+        assignment.role_id
+        for assignment in assignments
+    ] == list(capabilities)
+    assert all(
+        assignment.execution_id == "exec:WO-ASSIGN-001"
+        for assignment in assignments
+    )
+
+    assert prepared.work_order.work_order_id == "WO-ASSIGN-001"
