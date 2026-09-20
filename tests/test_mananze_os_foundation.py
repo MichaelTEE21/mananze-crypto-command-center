@@ -290,8 +290,11 @@ def test_approval_gate_approves_pending_request():
     assert approved.decided_by == "human:tshepo"
     assert approved.reason == "Approved for execution."
 
+from mananze_os.authority import Authority
 from mananze_os.input_request import InputRequest
+from mananze_os.permission import CapabilityPermission
 from mananze_os.runtime import MananzeRuntime
+from mananze_os.tenant import Tenant
 
 
 def test_mananze_runtime_end_to_end():
@@ -302,7 +305,41 @@ def test_mananze_runtime_end_to_end():
         objective="Increase dental practice patient bookings",
     )
 
-    runtime = MananzeRuntime()
+    capabilities = (
+        "marketing",
+        "lead_generation",
+        "sales",
+        "appointment_booking",
+        "customer_communications",
+        "retention",
+        "revenue",
+        "reporting",
+    )
+
+    runtime = MananzeRuntime(
+        tenants=(
+            Tenant(
+                tenant_id="dentist-demo",
+                name="Dentist Demo",
+            ),
+        ),
+        authorities=(
+            Authority(
+                actor_id="human:tshepo",
+                level="human",
+                can_execute=True,
+                requires_approval=True,
+            ),
+        ),
+        permissions=tuple(
+            CapabilityPermission(
+                actor_id="human:tshepo",
+                tenant_id="dentist-demo",
+                capability_id=capability_id,
+            )
+            for capability_id in capabilities
+        ),
+    )
 
     prepared = runtime.prepare(request)
 
@@ -329,11 +366,13 @@ def test_mananze_runtime_end_to_end():
     assert completed.approval.status == "approved"
     assert completed.report is not None
     assert completed.report.status == "completed"
-    assert len(completed.report.evidence) == 2
+    assert len(completed.report.evidence) == 3
     assert completed.report.evidence[0].action == "policy_decision"
     assert completed.report.evidence[0].status == "approval_required"
-    assert completed.report.evidence[1].action == "controlled_execution"
-    assert completed.report.evidence[1].status == "completed"
+    assert completed.report.evidence[1].action == "authorization_decision"
+    assert completed.report.evidence[1].status == "allowed"
+    assert completed.report.evidence[2].action == "controlled_execution"
+    assert completed.report.evidence[2].status == "completed"
 
 
 
