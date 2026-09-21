@@ -52,3 +52,25 @@ def test_registry_rejects_unknown_skill() -> None:
         match="unknown skill: missing-skill",
     ):
         registry.get("missing-skill")
+
+def test_default_skill_registry_contains_initial_skill_catalog() -> None:
+    from mananze_os.skill_registry import default_skill_registry
+
+    registry = default_skill_registry()
+
+    skills = registry.list_all()
+
+    assert len(skills) == 15
+    assert registry.get("sales:lead_qualification").capability_id == "sales"
+    assert registry.get("logistics:route_planning").capability_id == "logistics"
+    assert registry.get("reporting:business_reporting").capability_id == "reporting"
+
+
+def test_default_skill_registry_returns_independent_registries() -> None:
+    from mananze_os.skill_registry import default_skill_registry
+
+    first = default_skill_registry()
+    second = default_skill_registry()
+
+    assert first is not second
+    assert first.list_all() == second.list_all()
