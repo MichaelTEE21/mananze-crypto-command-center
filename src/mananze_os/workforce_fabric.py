@@ -64,6 +64,16 @@ class WorkforceFabric:
                 f"assignment already exists: {assignment_id}"
             )
 
+        if any(
+            existing.execution_id == execution_id
+            and existing.node_id == node.node_id
+            for existing in self._assignments.values()
+        ):
+            raise ValueError(
+                f"workforce node already assigned for execution: "
+                f"{execution_id}:{node.node_id}"
+            )
+
         assignment = self.assignment_planner.assign(
             assignment_id=assignment_id,
             execution_id=execution_id,

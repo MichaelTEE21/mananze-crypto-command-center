@@ -316,3 +316,49 @@ def test_fabric_rejects_role_with_unknown_skill() -> None:
         match="unknown skill: missing-skill",
     ):
         fabric.register_role(role)
+
+
+def test_fabric_rejects_duplicate_node_assignment_within_execution() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role("role-1"))
+    fabric.register_role(make_role("role-2"))
+
+    fabric.assign_role(
+        assignment_id="assignment-1",
+        execution_id="execution-1",
+        node=make_node("node-1"),
+        role_id="role-1",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="workforce node already assigned for execution: execution-1:node-1",
+    ):
+        fabric.assign_role(
+            assignment_id="assignment-2",
+            execution_id="execution-1",
+            node=make_node("node-1"),
+            role_id="role-2",
+        )
+
+
+def test_fabric_allows_same_node_id_across_executions() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role())
+
+    assignment_one = fabric.assign_role(
+        assignment_id="assignment-1",
+        execution_id="execution-1",
+        node=make_node("node-1"),
+        role_id="role-1",
+    )
+
+    assignment_two = fabric.assign_role(
+        assignment_id="assignment-2",
+        execution_id="execution-2",
+        node=make_node("node-1"),
+        role_id="role-1",
+    )
+
+    assert assignment_one.node_id == assignment_two.node_id
+    assert assignment_one.execution_id != assignment_two.execution_id
