@@ -98,9 +98,50 @@ class WorkforcePlanner:
         for capability_id in capability_ids:
             capability: Capability = self.registry.get(capability_id)
 
-            skills = self.skill_registry.list_for_capability(
-                capability.capability_id
-            )
+            required_skill_ids = {
+                "marketing": (
+                    "marketing:campaign_planning",
+                    "marketing:content_creation",
+                ),
+                "lead_generation": (
+                    "lead_generation:prospecting",
+                    "lead_generation:qualification",
+                ),
+                "sales": (
+                    "sales:lead_qualification",
+                    "sales:follow_up",
+                ),
+                "appointment_booking": (
+                    "appointment_booking:scheduling",
+                ),
+                "customer_communications": (
+                    "customer_communications:messaging",
+                ),
+                "retention": (
+                    "retention:engagement",
+                ),
+                "revenue": (
+                    "revenue:performance_analysis",
+                ),
+                "operations": (
+                    "operations:workflow_coordination",
+                ),
+                "logistics": (
+                    "logistics:route_planning",
+                ),
+                "fleet": (
+                    "fleet:fleet_monitoring",
+                ),
+                "cost_analysis": (
+                    "cost_analysis:cost_review",
+                ),
+                "reporting": (
+                    "reporting:business_reporting",
+                ),
+            }.get(capability.capability_id, ())
+
+            for skill_id in required_skill_ids:
+                self.skill_registry.get(skill_id)
 
             roles.append(
                 PlannedRole(
@@ -108,10 +149,7 @@ class WorkforcePlanner:
                     name=capability.name,
                     objective=capability.description,
                     capability_id=capability.capability_id,
-                    skill_ids=tuple(
-                        skill.skill_id
-                        for skill in skills
-                    ),
+                    skill_ids=required_skill_ids,
                 )
             )
 
