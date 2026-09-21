@@ -495,6 +495,19 @@ def test_mananze_runtime_creates_execution_scoped_workforce_assignments():
 
     prepared = runtime.prepare(request)
 
+    assignments_before_approval = (
+        runtime.workforce_fabric.list_assignments_for_execution(
+            "exec:WO-ASSIGN-001"
+        )
+    )
+
+    assert assignments_before_approval == ()
+
+    completed = runtime.execute(
+        prepared,
+        "human:tshepo",
+    )
+
     assignments = runtime.workforce_fabric.list_assignments_for_execution(
         "exec:WO-ASSIGN-001"
     )
@@ -523,4 +536,5 @@ def test_mananze_runtime_creates_execution_scoped_workforce_assignments():
         for assignment in assignments
     )
 
+    assert completed.approval.status == "approved"
     assert prepared.work_order.work_order_id == "WO-ASSIGN-001"

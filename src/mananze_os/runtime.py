@@ -118,24 +118,6 @@ class MananzeRuntime:
                 )
             )
 
-        execution_id = f"exec:{work_order.work_order_id}"
-
-        for planned_role in workforce.roles:
-            self.workforce_fabric.assign_role(
-                assignment_id=(
-                    f"assignment:"
-                    f"{work_order.work_order_id}:"
-                    f"{planned_role.role_id}"
-                ),
-                execution_id=execution_id,
-                node=ExecutionNode(
-                    node_id=f"node:{planned_role.role_id}",
-                    capability_id=planned_role.capability_id,
-                    skill_ids=planned_role.skill_ids,
-                ),
-                role_id=planned_role.role_id,
-            )
-
         policy = self.policy_engine.evaluate(workforce)
 
         if policy.effect == "deny":
@@ -231,12 +213,28 @@ class MananzeRuntime:
             "approved",
         )
 
+        execution_id = approved.execution_id
+
+        for planned_role in prepared.workforce.roles:
+            self.workforce_fabric.assign_role(
+                assignment_id=(
+                    f"assignment:"
+                    f"{prepared.work_order.work_order_id}:"
+                    f"{planned_role.role_id}"
+                ),
+                execution_id=execution_id,
+                node=ExecutionNode(
+                    node_id=f"node:{planned_role.role_id}",
+                    capability_id=planned_role.capability_id,
+                    skill_ids=planned_role.skill_ids,
+                ),
+                role_id=planned_role.role_id,
+            )
+
         execution_state, _ = self.execution_lifecycle.transition(
             execution_state,
             "running",
         )
-
-        execution_id = approved.execution_id
 
         assignments = (
             self.workforce_fabric.list_assignments_for_execution(
