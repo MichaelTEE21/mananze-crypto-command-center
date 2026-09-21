@@ -7,6 +7,7 @@ from dataclasses import dataclass
 class ExecutionNode:
     node_id: str
     capability_id: str
+    skill_ids: tuple[str, ...] = ()
     dependencies: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
@@ -15,6 +16,9 @@ class ExecutionNode:
 
         if not self.capability_id.strip():
             raise ValueError("capability_id is required")
+
+        if any(not skill_id.strip() for skill_id in self.skill_ids):
+            raise ValueError("skill_id is required")
 
 
 @dataclass(frozen=True)

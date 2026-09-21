@@ -112,3 +112,35 @@ def test_assignment_planner_rejects_role_without_required_capability() -> None:
             node=node,
             role_id="marketing.specialist",
         )
+
+def test_assignment_rejects_role_missing_required_skill() -> None:
+    registry = WorkforceRegistry()
+
+    registry.register(
+        WorkforceRole(
+            role_id="sales.specialist",
+            name="Sales Specialist",
+            description="Convert qualified opportunities into customers.",
+            capability_ids=("sales",),
+            skill_ids=("sales:follow_up",),
+        )
+    )
+
+    planner = WorkforceAssignmentPlanner(registry)
+
+    node = ExecutionNode(
+        node_id="sales",
+        capability_id="sales",
+        skill_ids=("sales:lead_qualification",),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="workforce role lacks required skill: sales:lead_qualification",
+    ):
+        planner.assign(
+            assignment_id="assignment:004",
+            execution_id="execution:001",
+            node=node,
+            role_id="sales.specialist",
+        )

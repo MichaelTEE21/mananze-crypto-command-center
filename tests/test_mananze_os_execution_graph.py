@@ -198,3 +198,21 @@ def test_execution_graph_returns_dependency_safe_order() -> None:
         "sales",
         "revenue",
     )
+
+def test_execution_node_accepts_required_skills() -> None:
+    node = ExecutionNode(
+        node_id="node:sales",
+        capability_id="sales",
+        skill_ids=("sales:lead_qualification",),
+    )
+
+    assert node.skill_ids == ("sales:lead_qualification",)
+
+
+def test_execution_node_rejects_blank_skill_id() -> None:
+    with pytest.raises(ValueError, match="skill_id is required"):
+        ExecutionNode(
+            node_id="node:sales",
+            capability_id="sales",
+            skill_ids=(" ",),
+        )

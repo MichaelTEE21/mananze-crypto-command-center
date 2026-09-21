@@ -26,6 +26,12 @@ class WorkforceAssignmentPlanner:
                 f"{node.capability_id}"
             )
 
+        for skill_id in node.skill_ids:
+            if skill_id not in role.skill_ids:
+                raise ValueError(
+                    f"workforce role lacks required skill: {skill_id}"
+                )
+
         return WorkforceAssignment(
             assignment_id=assignment_id,
             execution_id=execution_id,
