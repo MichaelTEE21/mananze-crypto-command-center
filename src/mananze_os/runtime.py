@@ -114,6 +114,7 @@ class MananzeRuntime:
                     name=planned_role.name,
                     description=planned_role.objective,
                     capability_ids=(planned_role.capability_id,),
+                    skill_ids=planned_role.skill_ids,
                 )
             )
 
@@ -130,6 +131,7 @@ class MananzeRuntime:
                 node=ExecutionNode(
                     node_id=f"node:{planned_role.role_id}",
                     capability_id=planned_role.capability_id,
+                    skill_ids=planned_role.skill_ids,
                 ),
                 role_id=planned_role.role_id,
             )

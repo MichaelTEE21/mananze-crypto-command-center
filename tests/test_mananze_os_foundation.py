@@ -440,6 +440,14 @@ def test_mananze_runtime_registers_planned_roles_in_workforce_fabric():
         for role in prepared.workforce.roles
     ] == [(capability_id,) for capability_id in capabilities]
 
+    assert [
+        runtime.workforce_fabric.get_role(role.role_id).skill_ids
+        for role in prepared.workforce.roles
+    ] == [
+        role.skill_ids
+        for role in prepared.workforce.roles
+    ]
+
 
 def test_mananze_runtime_creates_execution_scoped_workforce_assignments():
     request = InputRequest(

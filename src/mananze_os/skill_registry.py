@@ -32,6 +32,16 @@ class SkillRegistry:
         return tuple(self._skills.values())
 
 
+    def list_for_capability(self, capability_id: str) -> tuple[Skill, ...]:
+        if not capability_id.strip():
+            raise ValueError("capability_id is required")
+
+        return tuple(
+            skill
+            for skill in self._skills.values()
+            if skill.capability_id == capability_id
+        )
+
 def default_skill_registry() -> SkillRegistry:
     """Create the initial Mananze OS skill catalog."""
 

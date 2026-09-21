@@ -1,6 +1,8 @@
-﻿"""Mananze OS dynamic workforce planner foundation."""
+"""Mananze OS dynamic workforce planner foundation."""
 
 from dataclasses import dataclass
+
+from mananze_os.skill_registry import SkillRegistry, default_skill_registry
 
 from mananze_os.capability_registry import (
     Capability,
@@ -15,6 +17,7 @@ class PlannedRole:
     name: str
     objective: str
     capability_id: str
+    skill_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -30,8 +33,10 @@ class WorkforcePlanner:
     def __init__(
         self,
         registry: CapabilityRegistry | None = None,
+        skill_registry: SkillRegistry | None = None,
     ) -> None:
         self.registry = registry or default_capability_registry()
+        self.skill_registry = skill_registry or default_skill_registry()
 
     def plan(
         self,
@@ -93,12 +98,20 @@ class WorkforcePlanner:
         for capability_id in capability_ids:
             capability: Capability = self.registry.get(capability_id)
 
+            skills = self.skill_registry.list_for_capability(
+                capability.capability_id
+            )
+
             roles.append(
                 PlannedRole(
                     role_id=capability.capability_id,
                     name=capability.name,
                     objective=capability.description,
                     capability_id=capability.capability_id,
+                    skill_ids=tuple(
+                        skill.skill_id
+                        for skill in skills
+                    ),
                 )
             )
 
