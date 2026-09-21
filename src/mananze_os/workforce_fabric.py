@@ -1,9 +1,12 @@
 """Mananze OS workforce coordination fabric foundation."""
 
+from mananze_os.capability_registry import CapabilityRegistry
+from mananze_os.skill_registry import SkillRegistry
 from mananze_os.workforce_assignment import WorkforceAssignment
 from mananze_os.workforce_assignment_planner import WorkforceAssignmentPlanner
 from mananze_os.workforce_registry import WorkforceRegistry
 from mananze_os.workforce_role import WorkforceRole
+from mananze_os.workforce_role_validator import WorkforceRoleValidator
 
 
 class WorkforceFabric:
@@ -12,6 +15,8 @@ class WorkforceFabric:
     def __init__(
         self,
         registry: WorkforceRegistry | None = None,
+        capability_registry: CapabilityRegistry | None = None,
+        skill_registry: SkillRegistry | None = None,
     ) -> None:
         self.registry = registry or WorkforceRegistry()
         self.assignment_planner = WorkforceAssignmentPlanner(
@@ -19,7 +24,25 @@ class WorkforceFabric:
         )
         self._assignments: dict[str, WorkforceAssignment] = {}
 
+        if (capability_registry is None) != (skill_registry is None):
+            raise ValueError(
+                "capability_registry and skill_registry must be provided together"
+            )
+
+        self.role_validator = (
+            WorkforceRoleValidator(
+                capability_registry,
+                skill_registry,
+            )
+            if capability_registry is not None
+            and skill_registry is not None
+            else None
+        )
+
     def register_role(self, role: WorkforceRole) -> None:
+        if self.role_validator is not None:
+            self.role_validator.validate(role)
+
         self.registry.register(role)
 
     def get_role(self, role_id: str) -> WorkforceRole:

@@ -224,3 +224,89 @@ def test_fabric_rejects_blank_execution_lookup() -> None:
         match="execution_id is required",
     ):
         fabric.list_assignments_for_execution("")
+from mananze_os.capability_registry import Capability, CapabilityRegistry
+from mananze_os.skill import Skill
+from mananze_os.skill_registry import SkillRegistry
+from mananze_os.workforce_fabric import WorkforceFabric
+from mananze_os.workforce_role import WorkforceRole
+
+
+def make_validated_fabric() -> WorkforceFabric:
+    capability_registry = CapabilityRegistry()
+    capability_registry.register(
+        Capability(
+            capability_id="sales",
+            name="Sales",
+            description="Convert opportunities into customers.",
+            domains=("business", "sales"),
+        )
+    )
+
+    skill_registry = SkillRegistry()
+    skill_registry.register(
+        Skill(
+            skill_id="sales:lead_qualification",
+            name="Lead Qualification",
+            description="Qualify potential customers.",
+            capability_id="sales",
+        )
+    )
+
+    return WorkforceFabric(
+        capability_registry=capability_registry,
+        skill_registry=skill_registry,
+    )
+
+
+def test_fabric_validates_role_against_registries() -> None:
+    fabric = make_validated_fabric()
+
+    role = WorkforceRole(
+        role_id="sales.specialist",
+        name="Sales Specialist",
+        description="Convert qualified opportunities into customers.",
+        capability_ids=("sales",),
+        skill_ids=("sales:lead_qualification",),
+    )
+
+    fabric.register_role(role)
+
+    assert fabric.get_role("sales.specialist") == role
+
+
+def test_fabric_rejects_role_with_unknown_capability() -> None:
+    fabric = make_validated_fabric()
+
+    role = WorkforceRole(
+        role_id="sales.specialist",
+        name="Sales Specialist",
+        description="Convert qualified opportunities into customers.",
+        capability_ids=("missing-capability",),
+        skill_ids=(),
+    )
+
+    try:
+        fabric.register_role(role)
+    except ValueError as exc:
+        assert str(exc) == "unknown capability: missing-capability"
+    else:
+        raise AssertionError("expected invalid role to be rejected")
+
+
+def test_fabric_rejects_role_with_unknown_skill() -> None:
+    fabric = make_validated_fabric()
+
+    role = WorkforceRole(
+        role_id="sales.specialist",
+        name="Sales Specialist",
+        description="Convert qualified opportunities into customers.",
+        capability_ids=("sales",),
+        skill_ids=("missing-skill",),
+    )
+
+    try:
+        fabric.register_role(role)
+    except ValueError as exc:
+        assert str(exc) == "unknown skill: missing-skill"
+    else:
+        raise AssertionError("expected invalid role to be rejected")
