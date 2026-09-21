@@ -199,6 +199,27 @@ def test_intelligence_compiler_creates_plan():
     )
 
 
+def test_intelligence_compiler_compiles_capability_requirements():
+    work_order = WorkOrder(
+        work_order_id="WO-COMP-003",
+        tenant_id="tenant-demo",
+        objective="Increase dental practice patient bookings",
+    )
+
+    plan = IntelligenceCompiler().compile(work_order)
+
+    assert [requirement.capability_id for requirement in plan.requirements] == [
+        "marketing",
+        "lead_generation",
+        "sales",
+        "appointment_booking",
+        "customer_communications",
+        "retention",
+        "revenue",
+        "reporting",
+    ]
+
+
 def test_intelligence_compiler_rejects_empty_objective():
     work_order = WorkOrder(
         work_order_id="WO-COMP-002",

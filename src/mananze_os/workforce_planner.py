@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from mananze_os.compiler import CompiledRequirement
 from mananze_os.skill_registry import SkillRegistry, default_skill_registry
 
 from mananze_os.capability_registry import (
@@ -37,6 +38,51 @@ class WorkforcePlanner:
     ) -> None:
         self.registry = registry or default_capability_registry()
         self.skill_registry = skill_registry or default_skill_registry()
+
+    def plan_from_requirements(
+        self,
+        work_order_id: str,
+        objective: str,
+        requirements: tuple[CompiledRequirement, ...],
+    ) -> DynamicWorkforcePlan:
+        if not work_order_id.strip():
+            raise ValueError("work_order_id is required")
+
+        if not objective.strip():
+            raise ValueError("objective is required")
+
+        roles: list[PlannedRole] = []
+
+        for requirement in requirements:
+            capability: Capability = self.registry.get(
+                requirement.capability_id
+            )
+
+            required_skill_ids = tuple(
+                skill.skill_id
+                for skill in self.skill_registry.list_for_capability(
+                    capability.capability_id
+                )
+            )
+
+            for skill_id in required_skill_ids:
+                self.skill_registry.get(skill_id)
+
+            roles.append(
+                PlannedRole(
+                    role_id=capability.capability_id,
+                    name=capability.name,
+                    objective=capability.description,
+                    capability_id=capability.capability_id,
+                    skill_ids=required_skill_ids,
+                )
+            )
+
+        return DynamicWorkforcePlan(
+            work_order_id=work_order_id,
+            objective=objective.strip(),
+            roles=tuple(roles),
+        )
 
     def plan(
         self,

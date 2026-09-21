@@ -102,9 +102,10 @@ class MananzeRuntime:
 
         plan = self.compiler.compile(work_order)
 
-        workforce = self.workforce_planner.plan(
+        workforce = self.workforce_planner.plan_from_requirements(
             work_order.work_order_id,
             plan.objective,
+            plan.requirements,
         )
 
         for planned_role in workforce.roles:
