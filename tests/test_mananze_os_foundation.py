@@ -366,13 +366,16 @@ def test_mananze_runtime_end_to_end():
     assert completed.approval.status == "approved"
     assert completed.report is not None
     assert completed.report.status == "completed"
-    assert len(completed.report.evidence) == 3
+    assert len(completed.report.evidence) == 4
     assert completed.report.evidence[0].action == "policy_decision"
     assert completed.report.evidence[0].status == "approval_required"
     assert completed.report.evidence[1].action == "authorization_decision"
     assert completed.report.evidence[1].status == "allowed"
-    assert completed.report.evidence[2].action == "controlled_execution"
-    assert completed.report.evidence[2].status == "completed"
+    assert completed.report.evidence[2].action == "workforce_assignment"
+    assert completed.report.evidence[2].status == "validated"
+    assert "assignment_count=8" in completed.report.evidence[2].details
+    assert completed.report.evidence[3].action == "controlled_execution"
+    assert completed.report.evidence[3].status == "completed"
 
 
 

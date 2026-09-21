@@ -232,6 +232,32 @@ class MananzeRuntime:
 
         execution_id = approved.execution_id
 
+        assignments = (
+            self.workforce_fabric.list_assignments_for_execution(
+                execution_id
+            )
+        )
+
+        if not assignments:
+            raise ValueError(
+                "execution requires workforce assignments"
+            )
+
+        expected_role_ids = {
+            role.role_id
+            for role in prepared.workforce.roles
+        }
+
+        assigned_role_ids = {
+            assignment.role_id
+            for assignment in assignments
+        }
+
+        if assigned_role_ids != expected_role_ids:
+            raise ValueError(
+                "workforce assignments do not match planned roles"
+            )
+
         evidence = (
             ExecutionEvidence(
                 execution_id=execution_id,
@@ -252,6 +278,15 @@ class MananzeRuntime:
                     f"tenant_id={prepared.authorization.tenant_id}; "
                     f"allowed={prepared.authorization.allowed}; "
                     f"reasons={' | '.join(prepared.authorization.reasons)}"
+                ),
+            ),
+            ExecutionEvidence(
+                execution_id=execution_id,
+                action="workforce_assignment",
+                status="validated",
+                details=(
+                    f"assignment_count={len(assignments)}; "
+                    f"assignment_ids={','.join(assignment.assignment_id for assignment in assignments)}"
                 ),
             ),
             ExecutionEvidence(

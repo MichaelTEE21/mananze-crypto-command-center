@@ -19,6 +19,12 @@ def _complete_evidence(execution_id: str) -> tuple[ExecutionEvidence, ...]:
         ),
         ExecutionEvidence(
             execution_id=execution_id,
+            action="workforce_assignment",
+            status="validated",
+            details="workforce assignment verified",
+        ),
+        ExecutionEvidence(
+            execution_id=execution_id,
             action="controlled_execution",
             status="completed",
             details="execution completed",

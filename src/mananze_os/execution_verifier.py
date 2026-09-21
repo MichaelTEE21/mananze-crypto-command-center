@@ -37,6 +37,7 @@ class ExecutionVerifier:
             required_actions = {
                 "policy_decision",
                 "authorization_decision",
+                "workforce_assignment",
                 "controlled_execution",
             }
 
