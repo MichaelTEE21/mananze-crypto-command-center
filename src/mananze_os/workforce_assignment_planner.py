@@ -1,11 +1,12 @@
 """Mananze OS workforce assignment planner foundation."""
 
+from mananze_os.execution_graph import ExecutionNode
 from mananze_os.workforce_assignment import WorkforceAssignment
 from mananze_os.workforce_registry import WorkforceRegistry
 
 
 class WorkforceAssignmentPlanner:
-    """Assign registered workforce roles to execution graph nodes."""
+    """Assign registered workforce roles to compatible execution graph nodes."""
 
     def __init__(self, registry: WorkforceRegistry) -> None:
         self.registry = registry
@@ -14,15 +15,21 @@ class WorkforceAssignmentPlanner:
         self,
         assignment_id: str,
         execution_id: str,
-        node_id: str,
+        node: ExecutionNode,
         role_id: str,
     ) -> WorkforceAssignment:
-        self.registry.get(role_id)
+        role = self.registry.get(role_id)
+
+        if node.capability_id not in role.capability_ids:
+            raise ValueError(
+                f"workforce role lacks required capability: "
+                f"{node.capability_id}"
+            )
 
         return WorkforceAssignment(
             assignment_id=assignment_id,
             execution_id=execution_id,
-            node_id=node_id,
+            node_id=node.node_id,
             role_id=role_id,
         )
 

@@ -12,6 +12,7 @@ from mananze_os.authorization import (
 from mananze_os.compiler import CompiledPlan, IntelligenceCompiler
 from mananze_os.domain_qa import DomainQA, QAVerdict
 from mananze_os.execution_evidence import ExecutionEvidence
+from mananze_os.execution_graph import ExecutionNode
 from mananze_os.execution_lifecycle import ExecutionLifecycle
 from mananze_os.execution_state import ExecutionState
 from mananze_os.execution_verifier import (
@@ -126,7 +127,10 @@ class MananzeRuntime:
                     f"{planned_role.role_id}"
                 ),
                 execution_id=execution_id,
-                node_id=f"node:{planned_role.role_id}",
+                node=ExecutionNode(
+                    node_id=f"node:{planned_role.role_id}",
+                    capability_id=planned_role.capability_id,
+                ),
                 role_id=planned_role.role_id,
             )
 

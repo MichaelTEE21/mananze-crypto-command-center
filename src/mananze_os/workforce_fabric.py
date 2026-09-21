@@ -1,6 +1,7 @@
 """Mananze OS workforce coordination fabric foundation."""
 
 from mananze_os.capability_registry import CapabilityRegistry
+from mananze_os.execution_graph import ExecutionNode
 from mananze_os.skill_registry import SkillRegistry
 from mananze_os.workforce_assignment import WorkforceAssignment
 from mananze_os.workforce_assignment_planner import WorkforceAssignmentPlanner
@@ -55,7 +56,7 @@ class WorkforceFabric:
         self,
         assignment_id: str,
         execution_id: str,
-        node_id: str,
+        node: ExecutionNode,
         role_id: str,
     ) -> WorkforceAssignment:
         if assignment_id in self._assignments:
@@ -66,7 +67,7 @@ class WorkforceFabric:
         assignment = self.assignment_planner.assign(
             assignment_id=assignment_id,
             execution_id=execution_id,
-            node_id=node_id,
+            node=node,
             role_id=role_id,
         )
 

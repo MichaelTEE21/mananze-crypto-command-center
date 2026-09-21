@@ -1,5 +1,6 @@
 import pytest
 
+from mananze_os.execution_graph import ExecutionNode
 from mananze_os.workforce_assignment import WorkforceAssignment
 from mananze_os.workforce_fabric import WorkforceFabric
 from mananze_os.workforce_role import WorkforceRole
@@ -12,6 +13,13 @@ def make_role(role_id: str = "role-1") -> WorkforceRole:
         description="Coordinates controlled execution work.",
         capability_ids=("execution",),
         skill_ids=("execution:coordination",),
+    )
+
+
+def make_node(node_id: str = "node-1") -> ExecutionNode:
+    return ExecutionNode(
+        node_id=node_id,
+        capability_id="execution",
     )
 
 
@@ -42,7 +50,7 @@ def test_fabric_assigns_registered_role() -> None:
     assignment = fabric.assign_role(
         assignment_id="assignment-1",
         execution_id="execution-1",
-        node_id="node-1",
+        node=make_node(),
         role_id="role-1",
     )
 
@@ -60,7 +68,7 @@ def test_fabric_rejects_unknown_role_assignment() -> None:
         fabric.assign_role(
             assignment_id="assignment-1",
             execution_id="execution-1",
-            node_id="node-1",
+            node=make_node(),
             role_id="missing-role",
         )
 
@@ -72,7 +80,7 @@ def test_fabric_retrieves_assignment() -> None:
     assignment = fabric.assign_role(
         assignment_id="assignment-1",
         execution_id="execution-1",
-        node_id="node-1",
+        node=make_node(),
         role_id="role-1",
     )
 
@@ -87,13 +95,13 @@ def test_fabric_lists_assignments() -> None:
     assignment_one = fabric.assign_role(
         assignment_id="assignment-1",
         execution_id="execution-1",
-        node_id="node-1",
+        node=make_node("node-1"),
         role_id="role-1",
     )
     assignment_two = fabric.assign_role(
         assignment_id="assignment-2",
         execution_id="execution-1",
-        node_id="node-2",
+        node=make_node("node-2"),
         role_id="role-2",
     )
 
@@ -110,7 +118,7 @@ def test_fabric_rejects_duplicate_assignment() -> None:
     fabric.assign_role(
         assignment_id="assignment-1",
         execution_id="execution-1",
-        node_id="node-1",
+        node=make_node("node-1"),
         role_id="role-1",
     )
 
@@ -121,7 +129,7 @@ def test_fabric_rejects_duplicate_assignment() -> None:
         fabric.assign_role(
             assignment_id="assignment-1",
             execution_id="execution-2",
-            node_id="node-2",
+            node=make_node("node-2"),
             role_id="role-1",
         )
 
@@ -143,7 +151,7 @@ def test_fabric_assignment_list_is_immutable_snapshot() -> None:
     assignment = fabric.assign_role(
         assignment_id="assignment-1",
         execution_id="execution-1",
-        node_id="node-1",
+        node=make_node(),
         role_id="role-1",
     )
 
@@ -165,7 +173,7 @@ def test_fabric_assignment_record_is_immutable() -> None:
     assignment = fabric.assign_role(
         assignment_id="assignment-1",
         execution_id="execution-1",
-        node_id="node-1",
+        node=make_node(),
         role_id="role-1",
     )
 
@@ -183,19 +191,19 @@ def test_fabric_lists_assignments_for_execution() -> None:
     assignment_one = fabric.assign_role(
         assignment_id="assignment-1",
         execution_id="execution-1",
-        node_id="node-1",
+        node=make_node("node-1"),
         role_id="role-1",
     )
     assignment_two = fabric.assign_role(
         assignment_id="assignment-2",
         execution_id="execution-1",
-        node_id="node-2",
+        node=make_node("node-2"),
         role_id="role-2",
     )
     assignment_three = fabric.assign_role(
         assignment_id="assignment-3",
         execution_id="execution-2",
-        node_id="node-3",
+        node=make_node("node-3"),
         role_id="role-1",
     )
 
@@ -224,11 +232,11 @@ def test_fabric_rejects_blank_execution_lookup() -> None:
         match="execution_id is required",
     ):
         fabric.list_assignments_for_execution("")
+
+
 from mananze_os.capability_registry import Capability, CapabilityRegistry
 from mananze_os.skill import Skill
 from mananze_os.skill_registry import SkillRegistry
-from mananze_os.workforce_fabric import WorkforceFabric
-from mananze_os.workforce_role import WorkforceRole
 
 
 def make_validated_fabric() -> WorkforceFabric:
@@ -285,12 +293,11 @@ def test_fabric_rejects_role_with_unknown_capability() -> None:
         skill_ids=(),
     )
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match="unknown capability: missing-capability",
+    ):
         fabric.register_role(role)
-    except ValueError as exc:
-        assert str(exc) == "unknown capability: missing-capability"
-    else:
-        raise AssertionError("expected invalid role to be rejected")
 
 
 def test_fabric_rejects_role_with_unknown_skill() -> None:
@@ -304,9 +311,8 @@ def test_fabric_rejects_role_with_unknown_skill() -> None:
         skill_ids=("missing-skill",),
     )
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match="unknown skill: missing-skill",
+    ):
         fabric.register_role(role)
-    except ValueError as exc:
-        assert str(exc) == "unknown skill: missing-skill"
-    else:
-        raise AssertionError("expected invalid role to be rejected")
