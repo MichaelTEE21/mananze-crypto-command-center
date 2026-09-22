@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 
 sys.path.insert(0, "src")
 
@@ -559,3 +559,4 @@ def test_mananze_runtime_creates_execution_scoped_workforce_assignments():
 
     assert completed.approval.status == "approved"
     assert prepared.work_order.work_order_id == "WO-ASSIGN-001"
+

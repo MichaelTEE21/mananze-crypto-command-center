@@ -6,12 +6,19 @@ from mananze_os.execution_state import ExecutionState, ExecutionStatus
 
 
 _ALLOWED_TRANSITIONS: dict[ExecutionStatus, tuple[ExecutionStatus, ...]] = {
-    "created": ("pending_approval", "cancelled"),
+    "created": ("queued", "pending_approval", "cancelled"),
+    "queued": ("authorized", "cancelled"),
+    "authorized": ("pending_approval", "running", "cancelled"),
     "pending_approval": ("approved", "cancelled"),
     "approved": ("running", "cancelled"),
-    "running": ("completed", "failed", "cancelled"),
+    "running": ("waiting", "blocked", "qa", "executing", "completed", "failed", "cancelled"),
+    "waiting": ("running", "blocked", "cancelled"),
+    "blocked": ("waiting", "running", "recovering", "cancelled"),
+    "qa": ("executing", "failed", "blocked", "cancelled"),
+    "executing": ("completed", "failed", "cancelled", "recovering"),
+    "recovering": ("queued", "failed", "cancelled"),
     "completed": (),
-    "failed": (),
+    "failed": ("recovering",),
     "cancelled": (),
 }
 

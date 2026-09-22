@@ -1,4 +1,4 @@
-﻿"""Mananze OS execution state foundation contract."""
+"""Mananze OS execution state foundation contract."""
 
 from dataclasses import dataclass
 from typing import Literal
@@ -6,12 +6,19 @@ from typing import Literal
 
 ExecutionStatus = Literal[
     "created",
+    "queued",
+    "authorized",
     "pending_approval",
     "approved",
     "running",
+    "waiting",
+    "blocked",
+    "qa",
+    "executing",
     "completed",
     "failed",
     "cancelled",
+    "recovering",
 ]
 
 

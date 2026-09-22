@@ -2,7 +2,10 @@
 
 from dataclasses import dataclass
 
-from mananze_os.compiler import CompiledRequirement
+from mananze_os.compiler import (
+    CompiledRequirement,
+    IntelligenceCompiler,
+)
 from mananze_os.skill_registry import SkillRegistry, default_skill_registry
 
 from mananze_os.capability_registry import (
@@ -29,15 +32,17 @@ class DynamicWorkforcePlan:
 
 
 class WorkforcePlanner:
-    """Select a controlled workforce from the capability registry."""
+    """Select a controlled workforce from compiled capability requirements."""
 
     def __init__(
         self,
         registry: CapabilityRegistry | None = None,
         skill_registry: SkillRegistry | None = None,
+        compiler: IntelligenceCompiler | None = None,
     ) -> None:
         self.registry = registry or default_capability_registry()
         self.skill_registry = skill_registry or default_skill_registry()
+        self.compiler = compiler or IntelligenceCompiler(self.registry)
 
     def plan_from_requirements(
         self,
@@ -95,114 +100,20 @@ class WorkforcePlanner:
         if not objective.strip():
             raise ValueError("objective is required")
 
-        objective_text = objective.lower()
+        from mananze_os.work_order import WorkOrder
 
-        capability_ids: list[str] = []
-
-        if any(
-            word in objective_text
-            for word in ("patient", "booking", "appointment", "customer")
-        ):
-            capability_ids.extend(
-                [
-                    "marketing",
-                    "lead_generation",
-                    "sales",
-                    "appointment_booking",
-                    "customer_communications",
-                    "retention",
-                    "revenue",
-                    "reporting",
-                ]
-            )
-
-        elif any(
-            word in objective_text
-            for word in ("delivery", "logistics", "fleet", "transport")
-        ):
-            capability_ids.extend(
-                [
-                    "operations",
-                    "logistics",
-                    "fleet",
-                    "cost_analysis",
-                    "revenue",
-                    "reporting",
-                ]
-            )
-
-        else:
-            capability_ids.extend(
-                [
-                    "operations",
-                    "reporting",
-                ]
-            )
-
-        roles: list[PlannedRole] = []
-
-        for capability_id in capability_ids:
-            capability: Capability = self.registry.get(capability_id)
-
-            required_skill_ids = {
-                "marketing": (
-                    "marketing:campaign_planning",
-                    "marketing:content_creation",
-                ),
-                "lead_generation": (
-                    "lead_generation:prospecting",
-                    "lead_generation:qualification",
-                ),
-                "sales": (
-                    "sales:lead_qualification",
-                    "sales:follow_up",
-                ),
-                "appointment_booking": (
-                    "appointment_booking:scheduling",
-                ),
-                "customer_communications": (
-                    "customer_communications:messaging",
-                ),
-                "retention": (
-                    "retention:engagement",
-                ),
-                "revenue": (
-                    "revenue:performance_analysis",
-                ),
-                "operations": (
-                    "operations:workflow_coordination",
-                ),
-                "logistics": (
-                    "logistics:route_planning",
-                ),
-                "fleet": (
-                    "fleet:fleet_monitoring",
-                ),
-                "cost_analysis": (
-                    "cost_analysis:cost_review",
-                ),
-                "reporting": (
-                    "reporting:business_reporting",
-                ),
-            }.get(capability.capability_id, ())
-
-            for skill_id in required_skill_ids:
-                self.skill_registry.get(skill_id)
-
-            roles.append(
-                PlannedRole(
-                    role_id=capability.capability_id,
-                    name=capability.name,
-                    objective=capability.description,
-                    capability_id=capability.capability_id,
-                    skill_ids=required_skill_ids,
-                )
-            )
-
-        return DynamicWorkforcePlan(
+        work_order = WorkOrder(
             work_order_id=work_order_id,
+            tenant_id="planner-compatibility",
             objective=objective.strip(),
-            roles=tuple(roles),
+        )
+
+        compiled = self.compiler.compile(work_order)
+
+        return self.plan_from_requirements(
+            work_order_id=compiled.work_order_id,
+            objective=compiled.objective,
+            requirements=compiled.requirements,
         )
 
 

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from mananze_os.action_gate import ActionGate, ActionGateDecision, ActionRequest
 from mananze_os.approval import ApprovalDecision
 from mananze_os.approval_gate import ApprovalGate
 from mananze_os.authority import Authority
@@ -24,6 +25,8 @@ from mananze_os.input_request import InputRequest
 from mananze_os.permission import CapabilityPermission
 from mananze_os.policy_decision import PolicyDecision
 from mananze_os.policy_engine import PolicyEngine
+from mananze_os.quality_controller import QualityAssessment, QualityControllerIntelligence
+from mananze_os.task_scheduler import ScheduledTask, TaskScheduler
 from mananze_os.tenant import Tenant
 from mananze_os.workforce_planner import (
     DynamicWorkforcePlan,
@@ -51,6 +54,8 @@ class RuntimeResult:
     policy: PolicyDecision
     authorization: AuthorizationDecision
     qa: QAVerdict
+    quality: QualityAssessment
+    action_gate: ActionGateDecision
     approval: ApprovalDecision
     execution_state: ExecutionState
     report: RuntimeReport | None = None
@@ -66,15 +71,18 @@ class MananzeRuntime:
         permissions: tuple[CapabilityPermission, ...] = (),
     ) -> None:
         self.input_gate = InputGate()
+        self.action_gate = ActionGate()
         self.compiler = IntelligenceCompiler()
         self.workforce_planner = WorkforcePlanner()
         self.workforce_fabric = WorkforceFabric()
         self.policy_engine = PolicyEngine()
         self.authorization_engine = AuthorizationEngine()
         self.domain_qa = DomainQA()
+        self.quality_controller = QualityControllerIntelligence()
         self.approval_gate = ApprovalGate()
         self.execution_lifecycle = ExecutionLifecycle()
         self.execution_verifier = ExecutionVerifier()
+        self.task_scheduler = TaskScheduler()
         self.tenants = tenants
         self.authorities = authorities
         self.permissions = permissions
@@ -150,6 +158,65 @@ class MananzeRuntime:
         if not qa.passed:
             raise ValueError("domain QA failed")
 
+        quality = self.quality_controller.assess_workforce_plan(
+            assessment_id=f"qci:{work_order.work_order_id}",
+            tenant_id=work_order.tenant_id,
+            workforce=workforce,
+        )
+
+        if quality.failed:
+            raise ValueError(
+                "quality controller assessment failed: "
+                + "; ".join(
+                    finding.message
+                    for finding in quality.findings
+                    if finding.disposition == "fail"
+                )
+            )
+        action_request = ActionRequest(
+            action_id=f"action:{work_order.work_order_id}",
+            tenant_id=work_order.tenant_id,
+            execution_id=execution_id,
+            task_id=f"task:{work_order.work_order_id}",
+            actor_id=request.actor_id,
+            tool_id="mananze:controlled_execution",
+            capability_id="mananze:runtime_controlled_execution",
+            action="controlled_execution",
+            risk=policy.risk,
+            payload={
+                "work_order_id": work_order.work_order_id,
+                "execution_id": execution_id,
+                "workforce_role_ids": tuple(
+                    role.role_id for role in workforce.roles
+                ),
+            },
+            requires_approval=authority.requires_approval,
+        )
+
+        action_gate = self.action_gate.evaluate(
+            action_request,
+            tenant_allowed=tenant.active,
+            permission_allowed=authorization.allowed,
+            policy_effect=policy.effect,
+        )
+
+        if action_gate.effect == "deny":
+            raise PermissionError(
+                "action gate denied execution: "
+                + "; ".join(action_gate.reasons)
+            )
+        task_id = f"task:{work_order.work_order_id}"
+
+        scheduled_task = ScheduledTask(
+            task_id=task_id,
+            tenant_id=work_order.tenant_id,
+            execution_id=execution_id,
+            priority=0,
+            execution_class="standard",
+        )
+
+        self.task_scheduler.submit(scheduled_task)
+
         execution_state = ExecutionState(
             execution_id=execution_id,
             status="created",
@@ -172,6 +239,8 @@ class MananzeRuntime:
             policy=policy,
             authorization=authorization,
             qa=qa,
+            quality=quality,
+            action_gate=action_gate,
             approval=approval,
             execution_state=execution_state,
         )
@@ -263,6 +332,16 @@ class MananzeRuntime:
                 "workforce assignments do not match planned roles"
             )
 
+        execution_state, _ = self.execution_lifecycle.transition(
+            execution_state,
+            "qa",
+        )
+
+        execution_state, _ = self.execution_lifecycle.transition(
+            execution_state,
+            "executing",
+        )
+
         evidence = (
             ExecutionEvidence(
                 execution_id=execution_id,
@@ -336,6 +415,8 @@ class MananzeRuntime:
             policy=prepared.policy,
             authorization=prepared.authorization,
             qa=prepared.qa,
+            quality=prepared.quality,
+            action_gate=prepared.action_gate,
             approval=approved,
             execution_state=execution_state,
             report=report,
@@ -348,3 +429,14 @@ __all__ = [
     "RuntimeResult",
     "MananzeRuntime",
 ]
+
+
+
+
+
+
+
+
+
+
+
