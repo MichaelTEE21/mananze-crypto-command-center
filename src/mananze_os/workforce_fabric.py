@@ -1,7 +1,10 @@
 """Mananze OS workforce coordination fabric foundation."""
 
+from __future__ import annotations
+
 from mananze_os.capability_registry import CapabilityRegistry
 from mananze_os.execution_graph import ExecutionNode
+from mananze_os.mananze_workforce_catalog import build_mananze_workforce
 from mananze_os.skill_registry import SkillRegistry
 from mananze_os.workforce_assignment import WorkforceAssignment
 from mananze_os.workforce_assignment_planner import WorkforceAssignmentPlanner
@@ -20,9 +23,7 @@ class WorkforceFabric:
         skill_registry: SkillRegistry | None = None,
     ) -> None:
         self.registry = registry or WorkforceRegistry()
-        self.assignment_planner = WorkforceAssignmentPlanner(
-            self.registry
-        )
+        self.assignment_planner = WorkforceAssignmentPlanner(self.registry)
         self._assignments: dict[str, WorkforceAssignment] = {}
 
         if (capability_registry is None) != (skill_registry is None):
@@ -31,19 +32,22 @@ class WorkforceFabric:
             )
 
         self.role_validator = (
-            WorkforceRoleValidator(
-                capability_registry,
-                skill_registry,
-            )
+            WorkforceRoleValidator(capability_registry, skill_registry)
             if capability_registry is not None
             and skill_registry is not None
             else None
         )
 
+    @classmethod
+    def with_default_workforce(cls) -> "WorkforceFabric":
+        """Create a fabric containing the validated canonical 200-role workforce."""
+
+        registry, _ = build_mananze_workforce()
+        return cls(registry=registry)
+
     def register_role(self, role: WorkforceRole) -> None:
         if self.role_validator is not None:
             self.role_validator.validate(role)
-
         self.registry.register(role)
 
     def get_role(self, role_id: str) -> WorkforceRole:
@@ -60,9 +64,7 @@ class WorkforceFabric:
         role_id: str,
     ) -> WorkforceAssignment:
         if assignment_id in self._assignments:
-            raise ValueError(
-                f"assignment already exists: {assignment_id}"
-            )
+            raise ValueError(f"assignment already exists: {assignment_id}")
 
         if any(
             existing.execution_id == execution_id
@@ -80,14 +82,10 @@ class WorkforceFabric:
             node=node,
             role_id=role_id,
         )
-
         self._assignments[assignment.assignment_id] = assignment
         return assignment
 
-    def get_assignment(
-        self,
-        assignment_id: str,
-    ) -> WorkforceAssignment:
+    def get_assignment(self, assignment_id: str) -> WorkforceAssignment:
         try:
             return self._assignments[assignment_id]
         except KeyError:
