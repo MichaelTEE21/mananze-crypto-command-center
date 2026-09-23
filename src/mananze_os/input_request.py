@@ -1,6 +1,18 @@
-﻿"""Mananze OS input gate foundation contract."""
+"""Mananze OS input gate foundation contract."""
 
 from dataclasses import dataclass
+from typing import Literal
+
+
+ProcessingMode = Literal[
+    "standard",
+    "sync",
+    "fast",
+    "async",
+    "background",
+    "event",
+    "batch",
+]
 
 
 @dataclass(frozen=True)
@@ -10,6 +22,7 @@ class InputRequest:
     actor_id: str
     objective: str
     channel: str = "web"
+    processing_mode: ProcessingMode = "standard"
 
 
-__all__ = ["InputRequest"]
+__all__ = ["InputRequest", "ProcessingMode"]

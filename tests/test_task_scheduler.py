@@ -335,3 +335,95 @@ def test_concurrency_is_tenant_scoped():
     scheduler.mark_running("task-1")
 
     assert scheduler.is_eligible("task-2") is True
+import pytest
+
+from mananze_os.task_scheduler import (
+    ProcessingMode,
+    ScheduledTask,
+    TaskScheduler,
+    is_request_blocking_mode,
+)
+
+
+def test_all_processing_modes_are_supported():
+    modes: tuple[ProcessingMode, ...] = (
+        "sync",
+        "fast",
+        "async",
+        "background",
+        "event",
+        "batch",
+    )
+
+    for index, mode in enumerate(modes):
+        task = ScheduledTask(
+            task_id=f"mode-{index}",
+            tenant_id="tenant-1",
+            execution_id=f"exec-{index}",
+            execution_class=mode,
+        )
+
+        assert task.processing_mode == mode
+
+
+@pytest.mark.parametrize(
+    "mode",
+    ("standard", "sync", "fast"),
+)
+def test_request_blocking_modes_are_explicit(mode):
+    task = ScheduledTask(
+        task_id=f"blocking-{mode}",
+        tenant_id="tenant-1",
+        execution_id=f"exec-{mode}",
+        execution_class=mode,
+    )
+
+    assert task.request_blocking is True
+    assert is_request_blocking_mode(mode) is True
+
+
+@pytest.mark.parametrize(
+    "mode",
+    ("async", "background", "event", "batch"),
+)
+def test_non_blocking_modes_are_explicit(mode):
+    task = ScheduledTask(
+        task_id=f"non-blocking-{mode}",
+        tenant_id="tenant-1",
+        execution_id=f"exec-{mode}",
+        execution_class=mode,
+    )
+
+    assert task.request_blocking is False
+    assert is_request_blocking_mode(mode) is False
+
+
+def test_unsupported_processing_mode_is_rejected():
+    with pytest.raises(ValueError, match="unsupported processing mode"):
+        ScheduledTask(
+            task_id="invalid-mode",
+            tenant_id="tenant-1",
+            execution_id="exec-1",
+            execution_class="unknown",
+        )
+
+
+def test_processing_mode_does_not_bypass_scheduler_governance():
+    scheduler = TaskScheduler()
+
+    task = ScheduledTask(
+        task_id="async-task",
+        tenant_id="tenant-1",
+        execution_id="exec-1",
+        execution_class="async",
+    )
+
+    scheduler.submit(task)
+
+    assert scheduler.get("async-task").processing_mode == "async"
+    assert scheduler.next_task("tenant-1").task_id == "async-task"
+
+    scheduler.mark_running("async-task")
+    scheduler.mark_completed("async-task")
+
+    assert scheduler.get("async-task").status == "completed"

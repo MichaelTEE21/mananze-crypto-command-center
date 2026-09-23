@@ -13,6 +13,29 @@ TaskStatus = Literal[
     "cancelled",
 ]
 
+ProcessingMode = Literal[
+    "standard",
+    "sync",
+    "fast",
+    "async",
+    "background",
+    "event",
+    "batch",
+]
+
+
+_REQUEST_BLOCKING_MODES = frozenset({"standard", "sync", "fast"})
+_NON_BLOCKING_MODES = frozenset({"async", "background", "event", "batch"})
+_ALL_PROCESSING_MODES = _REQUEST_BLOCKING_MODES | _NON_BLOCKING_MODES
+
+
+def is_request_blocking_mode(processing_mode: ProcessingMode) -> bool:
+    """Return whether the processing mode is allowed to block a request path."""
+    if processing_mode not in _ALL_PROCESSING_MODES:
+        raise ValueError(f"unsupported processing mode: {processing_mode}")
+
+    return processing_mode in _REQUEST_BLOCKING_MODES
+
 
 @dataclass(frozen=True)
 class TaskBudget:
@@ -49,7 +72,7 @@ class ScheduledTask:
     tenant_id: str
     execution_id: str
     priority: int = 0
-    execution_class: str = "standard"
+    execution_class: ProcessingMode = "standard"
     dependencies: tuple[str, ...] = ()
     deadline: datetime | None = None
     budget: TaskBudget = TaskBudget()
@@ -70,6 +93,11 @@ class ScheduledTask:
         if not self.execution_class.strip():
             raise ValueError("execution_class is required")
 
+        if self.execution_class not in _ALL_PROCESSING_MODES:
+            raise ValueError(
+                f"unsupported processing mode: {self.execution_class}"
+            )
+
         if len(self.dependencies) != len(set(self.dependencies)):
             raise ValueError("duplicate task dependency detected")
 
@@ -84,6 +112,16 @@ class ScheduledTask:
 
         if self.deadline is not None and self.deadline.tzinfo is None:
             raise ValueError("deadline must be timezone-aware")
+
+    @property
+    def processing_mode(self) -> ProcessingMode:
+        """Canonical processing-mode name for request/runtime integrations."""
+        return self.execution_class
+
+    @property
+    def request_blocking(self) -> bool:
+        """Whether this task belongs on a request-blocking execution path."""
+        return is_request_blocking_mode(self.execution_class)
 
 
 class TaskScheduler:
@@ -209,6 +247,7 @@ class TaskScheduler:
             return False
 
         return True
+
     def next_task(
         self,
         tenant_id: str,
@@ -236,7 +275,10 @@ class TaskScheduler:
             ),
         )
 
-    def list_tasks(self, tenant_id: str | None = None) -> tuple[ScheduledTask, ...]:
+    def list_tasks(
+        self,
+        tenant_id: str | None = None,
+    ) -> tuple[ScheduledTask, ...]:
         if tenant_id is None:
             return tuple(self._tasks.values())
 
@@ -251,11 +293,10 @@ class TaskScheduler:
 
 
 __all__ = [
+    "ProcessingMode",
     "ScheduledTask",
     "TaskBudget",
     "TaskScheduler",
     "TaskStatus",
+    "is_request_blocking_mode",
 ]
-
-
-

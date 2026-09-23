@@ -560,3 +560,110 @@ def test_mananze_runtime_creates_execution_scoped_workforce_assignments():
     assert completed.approval.status == "approved"
     assert prepared.work_order.work_order_id == "WO-ASSIGN-001"
 
+
+def test_runtime_carries_request_processing_mode_to_scheduler():
+    request = InputRequest(
+        request_id="WO-PROCESSING-FAST",
+        tenant_id="dentist-demo",
+        actor_id="human:tshepo",
+        objective="Return a fast operational answer",
+        processing_mode="fast",
+    )
+
+    capabilities = (
+        "marketing",
+        "lead_generation",
+        "sales",
+        "appointment_booking",
+        "customer_communications",
+        "retention",
+        "revenue",
+        "reporting",
+        "operations",
+    )
+
+    runtime = MananzeRuntime(
+        tenants=(
+            Tenant(
+                tenant_id="dentist-demo",
+                name="Dentist Demo",
+            ),
+        ),
+        authorities=(
+            Authority(
+                actor_id="human:tshepo",
+                level="human",
+                can_execute=True,
+                requires_approval=True,
+            ),
+        ),
+        permissions=tuple(
+            CapabilityPermission(
+                actor_id="human:tshepo",
+                tenant_id="dentist-demo",
+                capability_id=capability_id,
+            )
+            for capability_id in capabilities
+        ),
+    )
+
+    prepared = runtime.prepare(request)
+    task = runtime.task_scheduler.get("task:WO-PROCESSING-FAST")
+
+    assert prepared.work_order.work_order_id == "WO-PROCESSING-FAST"
+    assert task.processing_mode == "fast"
+    assert task.request_blocking is True
+
+
+def test_runtime_preserves_non_blocking_processing_mode():
+    request = InputRequest(
+        request_id="WO-PROCESSING-BACKGROUND",
+        tenant_id="dentist-demo",
+        actor_id="human:tshepo",
+        objective="Run a background operational analysis",
+        processing_mode="background",
+    )
+
+    capabilities = (
+        "marketing",
+        "lead_generation",
+        "sales",
+        "appointment_booking",
+        "customer_communications",
+        "retention",
+        "revenue",
+        "reporting",
+        "operations",
+    )
+
+    runtime = MananzeRuntime(
+        tenants=(
+            Tenant(
+                tenant_id="dentist-demo",
+                name="Dentist Demo",
+            ),
+        ),
+        authorities=(
+            Authority(
+                actor_id="human:tshepo",
+                level="human",
+                can_execute=True,
+                requires_approval=True,
+            ),
+        ),
+        permissions=tuple(
+            CapabilityPermission(
+                actor_id="human:tshepo",
+                tenant_id="dentist-demo",
+                capability_id=capability_id,
+            )
+            for capability_id in capabilities
+        ),
+    )
+
+    prepared = runtime.prepare(request)
+    task = runtime.task_scheduler.get("task:WO-PROCESSING-BACKGROUND")
+
+    assert prepared.work_order.work_order_id == "WO-PROCESSING-BACKGROUND"
+    assert task.processing_mode == "background"
+    assert task.request_blocking is False

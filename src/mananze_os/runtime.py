@@ -212,7 +212,7 @@ class MananzeRuntime:
             tenant_id=work_order.tenant_id,
             execution_id=execution_id,
             priority=0,
-            execution_class="standard",
+            execution_class=request.processing_mode,
         )
 
         self.task_scheduler.submit(scheduled_task)
@@ -429,14 +429,3 @@ __all__ = [
     "RuntimeResult",
     "MananzeRuntime",
 ]
-
-
-
-
-
-
-
-
-
-
-
