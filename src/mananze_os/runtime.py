@@ -22,6 +22,7 @@ from mananze_os.execution_verifier import (
 )
 from mananze_os.input_gate import InputGate
 from mananze_os.input_request import InputRequest
+from mananze_os.request_lifecycle import RequestLifecycle, RequestState
 from mananze_os.permission import CapabilityPermission
 from mananze_os.policy_decision import PolicyDecision
 from mananze_os.policy_engine import PolicyEngine
@@ -58,6 +59,7 @@ class RuntimeResult:
     action_gate: ActionGateDecision
     approval: ApprovalDecision
     execution_state: ExecutionState
+    request_state: RequestState
     report: RuntimeReport | None = None
 
 
@@ -81,6 +83,7 @@ class MananzeRuntime:
         self.quality_controller = QualityControllerIntelligence()
         self.approval_gate = ApprovalGate()
         self.execution_lifecycle = ExecutionLifecycle()
+        self.request_lifecycle = RequestLifecycle()
         self.execution_verifier = ExecutionVerifier()
         self.task_scheduler = TaskScheduler()
         self.tenants = tenants
@@ -106,9 +109,31 @@ class MananzeRuntime:
         )
 
     def prepare(self, request: InputRequest) -> RuntimeResult:
+        request_state = RequestState(request_id=request.request_id)
+
+        request_state, _ = self.request_lifecycle.transition(
+            request_state,
+            "validating",
+        )
+
         work_order = self.input_gate.accept(request)
 
+        request_state, _ = self.request_lifecycle.transition(
+            request_state,
+            "classifying",
+        )
+
+        request_state, _ = self.request_lifecycle.transition(
+            request_state,
+            "compiling",
+        )
+
         plan = self.compiler.compile(work_order)
+
+        request_state, _ = self.request_lifecycle.transition(
+            request_state,
+            "planning",
+        )
 
         workforce = self.workforce_planner.plan_from_requirements(
             work_order.work_order_id,
@@ -217,6 +242,11 @@ class MananzeRuntime:
 
         self.task_scheduler.submit(scheduled_task)
 
+        request_state, _ = self.request_lifecycle.transition(
+            request_state,
+            "scheduled",
+        )
+
         execution_state = ExecutionState(
             execution_id=execution_id,
             status="created",
@@ -232,6 +262,11 @@ class MananzeRuntime:
             qa,
         )
 
+        request_state, _ = self.request_lifecycle.transition(
+            request_state,
+            "waiting_approval",
+        )
+
         return RuntimeResult(
             work_order=work_order,
             plan=plan,
@@ -243,6 +278,7 @@ class MananzeRuntime:
             action_gate=action_gate,
             approval=approval,
             execution_state=execution_state,
+            request_state=request_state,
         )
 
     def execute(
@@ -281,6 +317,11 @@ class MananzeRuntime:
         execution_state, _ = self.execution_lifecycle.transition(
             prepared.execution_state,
             "approved",
+        )
+
+        request_state, _ = self.request_lifecycle.transition(
+            prepared.request_state,
+            "executing",
         )
 
         execution_id = approved.execution_id
@@ -384,6 +425,11 @@ class MananzeRuntime:
             ),
         )
 
+        request_state, _ = self.request_lifecycle.transition(
+            request_state,
+            "verifying",
+        )
+
         execution_state, _ = self.execution_lifecycle.transition(
             execution_state,
             "completed",
@@ -399,6 +445,11 @@ class MananzeRuntime:
                 "execution verification failed: "
                 + "; ".join(verification.reasons)
             )
+
+        request_state, _ = self.request_lifecycle.transition(
+            request_state,
+            "completed",
+        )
 
         report = RuntimeReport(
             work_order_id=prepared.work_order.work_order_id,
@@ -419,6 +470,7 @@ class MananzeRuntime:
             action_gate=prepared.action_gate,
             approval=approved,
             execution_state=execution_state,
+            request_state=request_state,
             report=report,
         )
 
@@ -429,3 +481,20 @@ __all__ = [
     "RuntimeResult",
     "MananzeRuntime",
 ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
