@@ -23,6 +23,7 @@ from mananze_os.execution_verifier import (
 from mananze_os.input_gate import InputGate
 from mananze_os.input_request import InputRequest
 from mananze_os.request_lifecycle import RequestLifecycle, RequestState
+from mananze_os.processing_mode_decision import ProcessingModeDecider
 from mananze_os.permission import CapabilityPermission
 from mananze_os.policy_decision import PolicyDecision
 from mananze_os.policy_engine import PolicyEngine
@@ -84,6 +85,7 @@ class MananzeRuntime:
         self.approval_gate = ApprovalGate()
         self.execution_lifecycle = ExecutionLifecycle()
         self.request_lifecycle = RequestLifecycle()
+        self.processing_mode_decider = ProcessingModeDecider()
         self.execution_verifier = ExecutionVerifier()
         self.task_scheduler = TaskScheduler()
         self.tenants = tenants
@@ -232,12 +234,16 @@ class MananzeRuntime:
             )
         task_id = f"task:{work_order.work_order_id}"
 
+        processing_mode = self.processing_mode_decider.decide(
+            request.processing_mode
+        )
+
         scheduled_task = ScheduledTask(
             task_id=task_id,
             tenant_id=work_order.tenant_id,
             execution_id=execution_id,
             priority=0,
-            execution_class=request.processing_mode,
+            execution_class=processing_mode.processing_mode,
         )
 
         self.task_scheduler.submit(scheduled_task)
@@ -481,20 +487,3 @@ __all__ = [
     "RuntimeResult",
     "MananzeRuntime",
 ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
