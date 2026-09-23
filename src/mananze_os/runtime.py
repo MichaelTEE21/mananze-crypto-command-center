@@ -1,6 +1,7 @@
 """Mananze OS controlled runtime foundation."""
 
 from dataclasses import dataclass
+from uuid import uuid4
 
 from mananze_os.action_gate import ActionGate, ActionGateDecision, ActionRequest
 from mananze_os.approval import ApprovalDecision
@@ -294,6 +295,46 @@ class MananzeRuntime:
             request_state=request_state,
         )
 
+    def recover_stale_tasks(
+        self,
+        stale_after,
+        tenant_id: str | None = None,
+        limit: int = 100,
+        now=None,
+    ) -> tuple[ScheduledTask, ...]:
+        """
+        Recover stale durable execution leases.
+
+        SQLiteTaskStore remains the authoritative owner of task state,
+        lease ownership, retry accounting, and atomic recovery. Runtime
+        only coordinates discovery and recovery; it does not introduce
+        a competing control plane.
+        """
+        if self.task_store is None:
+            raise RuntimeError(
+                "durable task recovery requires a configured task store"
+            )
+
+        stale_tasks = self.task_store.stale_running_tasks(
+            stale_after=stale_after,
+            tenant_id=tenant_id,
+            limit=limit,
+            now=now,
+        )
+
+        recovered: list[ScheduledTask] = []
+
+        for task in stale_tasks:
+            recovered.append(
+                self.task_store.recover(
+                    task_id=task.task_id,
+                    stale_after=stale_after,
+                    now=now,
+                )
+            )
+
+        return tuple(recovered)
+
     def execute(
         self,
         prepared: RuntimeResult,
@@ -354,10 +395,21 @@ class MananzeRuntime:
         execution_id = approved.execution_id
 
         task_id = f"task:{prepared.work_order.work_order_id}"
-        lease_id = f"lease:{execution_id}"
+        lease_id = (
+            f"lease:{execution_id}:"
+            f"worker:{uuid4().hex}"
+        )
 
         if self.task_store is not None:
-            self.task_store.start(
+            started_task = self.task_store.start(
+                task_id=task_id,
+                lease_id=lease_id,
+            )
+
+            # Establish the first worker heartbeat immediately after
+            # acquiring the durable execution lease. Subsequent
+            # heartbeats are owned by the worker executing the task.
+            self.task_store.heartbeat(
                 task_id=task_id,
                 lease_id=lease_id,
             )
