@@ -379,3 +379,210 @@ def test_empty_permission_identity_is_rejected() -> None:
             tenant_id="tenant-demo",
             capability_id=" ",
         )
+
+from mananze_os.intelligence_fabric import IntelligenceFabric
+from mananze_os.intelligence_provider import (
+    IntelligenceCoordinator,
+    IntelligenceProviderRegistry,
+)
+from mananze_os.obligation_intelligence_provider import ObligationIntelligenceProvider
+from mananze_os.obligation_registry import ObligationRegistry
+from mananze_os.obligation_intelligence import Obligation
+
+
+def test_intelligence_observation_does_not_grant_execution_authority():
+    obligation_registry = ObligationRegistry()
+    obligation_registry.register(
+        Obligation(
+            obligation_id="obligation-auth-1",
+            tenant_id="tenant-demo",
+            name="Monthly supplier payment",
+            obligation_type="payment",
+            counterparty="Supplier",
+            amount=1000.0,
+            currency="ZAR",
+            frequency="monthly",
+            due_date=None,
+            renewal_date=None,
+            status="active",
+            approval_required=True,
+            source_reference="source-1",
+        )
+    )
+
+    provider = ObligationIntelligenceProvider(obligation_registry)
+    fabric = IntelligenceFabric()
+    registry = IntelligenceProviderRegistry()
+    registry.register(provider)
+    coordinator = IntelligenceCoordinator(fabric, registry)
+
+    observations = coordinator.collect(
+        provider_id="mananze:obligations",
+        tenant_id="tenant-demo",
+    )
+
+    assert len(observations) == 1
+    assert observations[0].domain == "obligations"
+
+    authority = Authority(
+        actor_id="agent:obligations",
+        level="agent",
+        can_execute=False,
+        requires_approval=True,
+    )
+
+    tenant = Tenant(tenant_id="tenant-demo", name="Demo Tenant")
+    planner = WorkforcePlanner()
+    workforce = planner.plan(
+        work_order_id="wo-intelligence-auth-1",
+        objective="business operations report",
+    )
+
+    decision = AuthorizationEngine().evaluate(
+        execution_id="execution-intelligence-1",
+        authority=authority,
+        tenant=tenant,
+        workforce=workforce,
+        permissions=(),
+    )
+
+    assert decision.allowed is False
+    assert "authority does not permit execution" in decision.reasons
+
+
+def test_intelligence_does_not_create_permissions():
+    obligation_registry = ObligationRegistry()
+    obligation_registry.register(
+        Obligation(
+            obligation_id="obligation-auth-2",
+            tenant_id="tenant-demo",
+            name="Monthly software subscription",
+            obligation_type="subscription",
+            counterparty="Software Vendor",
+            amount=500.0,
+            currency="ZAR",
+            frequency="monthly",
+            due_date=None,
+            renewal_date=None,
+            status="active",
+            approval_required=True,
+            source_reference="source-2",
+        )
+    )
+
+    provider = ObligationIntelligenceProvider(obligation_registry)
+    observations = provider.observe(tenant_id="tenant-demo")
+
+    assert len(observations) == 1
+
+    value = observations[0].value
+
+    assert "actor_id" not in value
+    assert "capability_id" not in value
+    assert "allowed" not in value
+    assert observations[0].tenant_id == "tenant-demo"
+
+
+def test_intelligence_cannot_bypass_missing_permission():
+    obligation_registry = ObligationRegistry()
+    obligation_registry.register(
+        Obligation(
+            obligation_id="obligation-auth-3",
+            tenant_id="tenant-demo",
+            name="Fleet service obligation",
+            obligation_type="maintenance",
+            counterparty="Workshop",
+            amount=2000.0,
+            currency="ZAR",
+            frequency="monthly",
+            due_date=None,
+            renewal_date=None,
+            status="active",
+            approval_required=True,
+            source_reference="source-3",
+        )
+    )
+
+    provider = ObligationIntelligenceProvider(obligation_registry)
+    observations = provider.observe(tenant_id="tenant-demo")
+
+    assert observations
+
+    authority = Authority(
+        actor_id="human:tshepo",
+        level="human",
+        can_execute=True,
+        requires_approval=True,
+    )
+
+    tenant = Tenant(tenant_id="tenant-demo", name="Demo Tenant")
+    planner = WorkforcePlanner()
+    workforce = planner.plan(
+        work_order_id="wo-intelligence-auth-3",
+        objective="business operations report",
+    )
+
+    decision = AuthorizationEngine().evaluate(
+        execution_id="execution-intelligence-2",
+        authority=authority,
+        tenant=tenant,
+        workforce=workforce,
+        permissions=(),
+    )
+
+    assert decision.allowed is False
+    assert any(
+        "missing permission" in reason
+        for reason in decision.reasons
+    )
+
+
+def test_intelligence_provider_cannot_change_authorization_state():
+    obligation_registry = ObligationRegistry()
+    obligation_registry.register(
+        Obligation(
+            obligation_id="obligation-auth-4",
+            tenant_id="tenant-demo",
+            name="Vehicle insurance renewal",
+            obligation_type="insurance",
+            counterparty="Insurer",
+            amount=1500.0,
+            currency="ZAR",
+            frequency="annual",
+            due_date=None,
+            renewal_date=None,
+            status="active",
+            approval_required=True,
+            source_reference="source-4",
+        )
+    )
+
+    provider = ObligationIntelligenceProvider(obligation_registry)
+    observations = provider.observe(tenant_id="tenant-demo")
+
+    authority = Authority(
+        actor_id="agent:obligations",
+        level="agent",
+        can_execute=False,
+        requires_approval=True,
+    )
+
+    tenant = Tenant(tenant_id="tenant-demo", name="Demo Tenant")
+    planner = WorkforcePlanner()
+    workforce = planner.plan(
+        work_order_id="wo-intelligence-auth-4",
+        objective="business operations report",
+    )
+
+    decision = AuthorizationEngine().evaluate(
+        execution_id="execution-intelligence-3",
+        authority=authority,
+        tenant=tenant,
+        workforce=workforce,
+        permissions=(),
+    )
+
+    assert decision.allowed is False
+    assert observations[0].domain == "obligations"
+    assert observations[0].kind == "fact"
+    assert observations[0].tenant_id == "tenant-demo"
