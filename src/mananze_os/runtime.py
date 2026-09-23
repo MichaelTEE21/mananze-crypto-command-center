@@ -571,6 +571,84 @@ class MananzeRuntime:
             report=report,
         )
 
+    def claim_next_task(
+        self,
+        *,
+        tenant_id: str,
+        lease_id: str,
+        now=None,
+    ) -> ScheduledTask | None:
+        """Claim the next durable task for a worker.
+
+        The scheduler selects eligible work, while the durable task store
+        remains authoritative for task state and execution leases.
+        """
+        task = self.task_scheduler.next_task(
+            tenant_id=tenant_id,
+            now=now,
+        )
+
+        if task is None:
+            return None
+
+        if self.task_store is None:
+            raise RuntimeError(
+                "durable task store is required for worker continuation"
+            )
+
+        effective_lease_id = lease_id
+
+        started_task = self.task_store.start(
+            task_id=task.task_id,
+            lease_id=effective_lease_id,
+            now=now,
+        )
+
+        self.task_scheduler.mark_running(task.task_id)
+
+        return started_task
+
+    def heartbeat_task(
+        self,
+        *,
+        task_id: str,
+        lease_id: str,
+        now=None,
+    ) -> ScheduledTask:
+        """Renew a worker's durable execution lease."""
+        if self.task_store is None:
+            raise RuntimeError(
+                "durable task store is required for worker continuation"
+            )
+
+        return self.task_store.heartbeat(
+            task_id=task_id,
+            lease_id=lease_id,
+            now=now,
+        )
+
+    def complete_task(
+        self,
+        *,
+        task_id: str,
+        lease_id: str,
+        now=None,
+    ) -> ScheduledTask:
+        """Complete a task only when the supplied lease is authoritative."""
+        if self.task_store is None:
+            raise RuntimeError(
+                "durable task store is required for worker continuation"
+            )
+
+        completed_task = self.task_store.complete(
+            task_id=task_id,
+            lease_id=lease_id,
+            now=now,
+        )
+
+        self.task_scheduler.mark_completed(task_id)
+
+        return completed_task
 
 __all__ = [
     "ExecutionEvidence",
@@ -578,6 +656,3 @@ __all__ = [
     "RuntimeResult",
     "MananzeRuntime",
 ]
-
-
-
