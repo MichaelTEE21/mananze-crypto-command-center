@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 
 from mananze_os.authority import Authority
 from mananze_os.authorization import AuthorizationEngine
@@ -586,3 +586,103 @@ def test_intelligence_provider_cannot_change_authorization_state():
     assert observations[0].domain == "obligations"
     assert observations[0].kind == "fact"
     assert observations[0].tenant_id == "tenant-demo"
+
+from mananze_os.approval_gate import ApprovalGate
+from mananze_os.domain_qa import DomainQA
+from mananze_os.intelligence_fabric import IntelligenceObservation
+from mananze_os.policy_engine import PolicyEngine
+from mananze_os.policy import Policy
+from mananze_os.workforce_planner import WorkforcePlanner
+
+
+def test_intelligence_cannot_change_policy_decision():
+    planner = WorkforcePlanner()
+    workforce = planner.plan(
+        work_order_id="wo-intelligence-policy-1",
+        objective="business operations report",
+    )
+
+    intelligence = IntelligenceObservation(
+        observation_id="intel:policy:001",
+        tenant_id="tenant-demo",
+        domain="business",
+        kind="recommendation",
+        subject="recommended_policy_effect",
+        value={"effect": "allow", "autonomy_level": 4},
+        confidence=1.0,
+        source_reference="intelligence:test",
+    )
+
+    policy = Policy(
+        policy_id="policy-deny-operations",
+        name="Deny operations",
+        effect="deny",
+        description="Operations are denied for this test.",
+        capability_ids=("operations",),
+    )
+
+    decision = PolicyEngine().evaluate(
+        workforce=workforce,
+        policies=(policy,),
+    )
+
+    assert intelligence.value["effect"] == "allow"
+    assert intelligence.value["autonomy_level"] == 4
+    assert decision.effect == "deny"
+    assert decision.autonomy_level == 0
+
+
+def test_intelligence_cannot_elevate_policy_autonomy():
+    planner = WorkforcePlanner()
+    workforce = planner.plan(
+        work_order_id="wo-intelligence-policy-2",
+        objective="business operations report",
+    )
+
+    intelligence = IntelligenceObservation(
+        observation_id="intel:policy:002",
+        tenant_id="tenant-demo",
+        domain="business",
+        kind="recommendation",
+        subject="recommended_autonomy",
+        value={"autonomy_level": 4},
+        confidence=1.0,
+        source_reference="intelligence:test",
+    )
+
+    decision = PolicyEngine().evaluate(workforce=workforce)
+
+    assert intelligence.value["autonomy_level"] == 4
+    assert decision.autonomy_level == 3
+
+
+def test_intelligence_cannot_approve_execution():
+    planner = WorkforcePlanner()
+    workforce = planner.plan(
+        work_order_id="wo-intelligence-approval-1",
+        objective="business operations report",
+    )
+
+    qa_verdict = DomainQA().verify(workforce)
+    approval = ApprovalGate().request(
+        execution_id="execution-intelligence-approval-1",
+        qa_verdict=qa_verdict,
+    )
+
+    intelligence = IntelligenceObservation(
+        observation_id="intel:approval:001",
+        tenant_id="tenant-demo",
+        domain="business",
+        kind="recommendation",
+        subject="approval",
+        value={
+            "status": "approved",
+            "decided_by": "agent:intelligence",
+        },
+        confidence=1.0,
+        source_reference="intelligence:test",
+    )
+
+    assert intelligence.value["status"] == "approved"
+    assert approval.status == "pending"
+    assert approval.decided_by is None
