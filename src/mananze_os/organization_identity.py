@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from mananze_os.mananze_workforce_catalog import build_mananze_workforce
+
 
 OrganizationType = Literal["technology_company"]
 OwnershipType = Literal["trust"]
@@ -102,6 +104,52 @@ def build_mananze_identity(trust_legal_name: str) -> OrganizationIdentity:
     )
 
 
+def build_mananze_agent_registry(
+    trust_legal_name: str,
+) -> AgentRegistry:
+    """
+    Build the canonical Mananze agent registry from the 200-role workforce.
+
+    WorkforceRole is the source of truth for role/domain/capability identity.
+    This function creates the corresponding stable AgentIdentity records.
+    Authority and execution permissions remain outside agent identity.
+    """
+    organization = build_mananze_identity(trust_legal_name)
+    workforce_registry, _ = build_mananze_workforce()
+
+    agents: list[AgentIdentity] = []
+
+    for workforce_role in workforce_registry.list_all():
+        role_kind = (
+            "Domain Orchestrator"
+            if workforce_role.role_id.startswith("orchestrator:")
+            else "Specialist Agent"
+        )
+
+        agents.append(
+            AgentIdentity(
+                agent_id=f"agent:{workforce_role.role_id}",
+                name=workforce_role.name,
+                role=role_kind,
+                domain=workforce_role.role_id.split(":", 1)[1],
+                capabilities=workforce_role.capability_ids,
+                autonomy_level=0,
+                version="1.0.0",
+                status="active",
+            )
+        )
+
+    if len(agents) != 200:
+        raise RuntimeError(
+            f"canonical workforce must produce exactly 200 agents, got {len(agents)}"
+        )
+
+    return AgentRegistry(
+        organization=organization,
+        agents=tuple(agents),
+    )
+
+
 DEFAULT_AGENT_IDENTITIES = (
     AgentIdentity(
         agent_id="agent:sentinel",
@@ -147,5 +195,6 @@ __all__ = [
     "DEFAULT_AGENT_IDENTITIES",
     "OrganizationIdentity",
     "OwnershipIdentity",
+    "build_mananze_agent_registry",
     "build_mananze_identity",
 ]
