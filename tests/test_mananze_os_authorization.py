@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 
 from mananze_os.authority import Authority
 from mananze_os.authorization import AuthorizationEngine

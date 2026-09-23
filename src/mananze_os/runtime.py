@@ -14,6 +14,7 @@ from mananze_os.compiler import CompiledPlan, IntelligenceCompiler
 from mananze_os.domain_qa import DomainQA, QAVerdict
 from mananze_os.execution_evidence import ExecutionEvidence
 from mananze_os.execution_graph import ExecutionNode
+from mananze_os.execution_context_integrity import ExecutionContextIntegrity
 from mananze_os.execution_lifecycle import ExecutionLifecycle
 from mananze_os.execution_state import ExecutionState
 from mananze_os.execution_verifier import (
@@ -86,6 +87,7 @@ class MananzeRuntime:
         self.execution_lifecycle = ExecutionLifecycle()
         self.request_lifecycle = RequestLifecycle()
         self.processing_mode_decider = ProcessingModeDecider()
+        self.execution_context_integrity = ExecutionContextIntegrity()
         self.execution_verifier = ExecutionVerifier()
         self.task_scheduler = TaskScheduler()
         self.tenants = tenants
@@ -487,3 +489,6 @@ __all__ = [
     "RuntimeResult",
     "MananzeRuntime",
 ]
+
+
+
