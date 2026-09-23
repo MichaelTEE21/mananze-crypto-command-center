@@ -79,6 +79,21 @@ class SQLiteTaskStore:
                     FOREIGN KEY(task_id) REFERENCES tasks(task_id)
                 );
 
+                CREATE TABLE IF NOT EXISTS task_idempotency (
+                    tenant_id TEXT NOT NULL,
+                    operation_key TEXT NOT NULL,
+                    task_id TEXT NOT NULL,
+                    execution_id TEXT NOT NULL,
+                    lease_id TEXT,
+                    status TEXT NOT NULL,
+                    result_json TEXT,
+                    evidence_json TEXT,
+                    created_at TEXT NOT NULL,
+                    completed_at TEXT,
+                    PRIMARY KEY (tenant_id, operation_key),
+                    FOREIGN KEY(task_id) REFERENCES tasks(task_id)
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_tasks_running
                     ON tasks(status, tenant_id, task_id);
 
@@ -86,6 +101,14 @@ class SQLiteTaskStore:
                     ON task_recovery(heartbeat_at, started_at);
                 """
             )
+
+            try:
+                conn.execute(
+                    "ALTER TABLE task_idempotency ADD COLUMN lease_id TEXT"
+                )
+            except sqlite3.OperationalError as exc:
+                if "duplicate column name" not in str(exc).lower():
+                    raise
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(
@@ -640,5 +663,247 @@ class SQLiteTaskStore:
             f"{tenant_id}|{task_id}|{execution_id}|{attempt}".encode()
         ).hexdigest()
 
+
+
+    @staticmethod
+    def operation_key(
+        tenant_id: str,
+        task_id: str,
+        execution_id: str,
+        operation: str,
+    ) -> str:
+        """Return a stable identity for one protected logical operation."""
+        if not tenant_id.strip():
+            raise ValueError("tenant_id cannot be blank")
+        if not task_id.strip():
+            raise ValueError("task_id cannot be blank")
+        if not execution_id.strip():
+            raise ValueError("execution_id cannot be blank")
+        if not operation.strip():
+            raise ValueError("operation cannot be blank")
+
+        return hashlib.sha256(
+            f"{tenant_id}|{task_id}|{execution_id}|{operation}".encode()
+        ).hexdigest()
+
+    def claim_operation(
+        self,
+        *,
+        tenant_id: str,
+        operation_key: str,
+        task_id: str,
+        execution_id: str,
+        lease_id: str | None = None,
+        now: datetime | None = None,
+    ) -> bool:
+        """Atomically claim a protected logical operation."""
+
+        if not tenant_id.strip():
+            raise ValueError("tenant_id cannot be blank")
+        if not operation_key.strip():
+            raise ValueError("operation_key cannot be blank")
+        if not task_id.strip():
+            raise ValueError("task_id cannot be blank")
+        if not execution_id.strip():
+            raise ValueError("execution_id cannot be blank")
+
+        timestamp = _dt(now or datetime.now(timezone.utc))
+
+        with self._lock, self._connect() as conn:
+            task_row = conn.execute(
+                """
+                SELECT tenant_id, execution_id
+                FROM tasks
+                WHERE task_id = ?
+                """,
+                (task_id,),
+            ).fetchone()
+
+            if task_row is None:
+                raise KeyError("task does not exist")
+
+            if (
+                task_row["tenant_id"] != tenant_id
+                or task_row["execution_id"] != execution_id
+            ):
+                raise ValueError(
+                    "task execution context does not match idempotency claim"
+                )
+
+            cursor = conn.execute(
+                """
+                INSERT OR IGNORE INTO task_idempotency (
+                    tenant_id,
+                    operation_key,
+                    task_id,
+                    execution_id,
+                    lease_id,
+                    status,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, 'in_progress', ?)
+                """,
+                (
+                    tenant_id,
+                    operation_key,
+                    task_id,
+                    execution_id,
+                    lease_id,
+                    timestamp,
+                ),
+            )
+
+            if cursor.rowcount == 1:
+                return True
+
+            existing = conn.execute(
+                """
+                SELECT lease_id, status
+                FROM task_idempotency
+                WHERE tenant_id = ?
+                  AND operation_key = ?
+                """,
+                (tenant_id, operation_key),
+            ).fetchone()
+
+            if existing is None:
+                raise RuntimeError(
+                    "idempotency claim was lost without a durable record"
+                )
+
+            if existing["status"] == "completed":
+                return False
+
+            if existing["status"] != "in_progress":
+                return False
+
+            recovery = conn.execute(
+                """
+                SELECT lease_id
+                FROM task_recovery
+                WHERE task_id = ?
+                """,
+                (task_id,),
+            ).fetchone()
+
+            current_lease = (
+                recovery["lease_id"] if recovery is not None else None
+            )
+
+            # The durable task store has already accepted this lease.
+            # Allow the current execution owner to take ownership of the
+            # same logical operation if the previous operation lease is
+            # absent or belongs to an obsolete worker.
+            if (
+                lease_id is not None
+                and current_lease == lease_id
+                and existing["lease_id"] != lease_id
+            ):
+                reclaimed = conn.execute(
+                    """
+                    UPDATE task_idempotency
+                    SET lease_id = ?
+                    WHERE tenant_id = ?
+                      AND operation_key = ?
+                      AND status = 'in_progress'
+                      AND (
+                          lease_id IS NULL
+                          OR lease_id != ?
+                      )
+                    """,
+                    (
+                        lease_id,
+                        tenant_id,
+                        operation_key,
+                        lease_id,
+                    ),
+                )
+
+                return reclaimed.rowcount == 1
+
+            return False
+
+    def idempotency_record(
+        self,
+        *,
+        tenant_id: str,
+        operation_key: str,
+    ) -> dict | None:
+        """Return the durable operation record for a tenant."""
+        with self._lock, self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT *
+                FROM task_idempotency
+                WHERE tenant_id = ?
+                  AND operation_key = ?
+                """,
+                (tenant_id, operation_key),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def complete_operation(
+        self,
+        *,
+        tenant_id: str,
+        operation_key: str,
+        lease_id: str,
+        result: object | None = None,
+        evidence: object | None = None,
+        now: datetime | None = None,
+    ) -> dict:
+        """Durably complete a logical operation owned by the supplied lease."""
+        if not tenant_id.strip():
+            raise ValueError("tenant_id cannot be blank")
+        if not operation_key.strip():
+            raise ValueError("operation_key cannot be blank")
+        if not lease_id.strip():
+            raise ValueError("lease_id cannot be blank")
+
+        timestamp = _dt(now or datetime.now(timezone.utc))
+
+        with self._lock, self._connect() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE task_idempotency
+                SET status = 'completed',
+                    result_json = ?,
+                    evidence_json = ?,
+                    completed_at = ?
+                WHERE tenant_id = ?
+                  AND operation_key = ?
+                  AND lease_id = ?
+                  AND status = 'in_progress'
+                """,
+                (
+                    json.dumps(result),
+                    json.dumps(evidence),
+                    timestamp,
+                    tenant_id,
+                    operation_key,
+                    lease_id,
+                ),
+            )
+
+            if cursor.rowcount != 1:
+                raise PermissionError(
+                    "operation is not in progress under the supplied lease"
+                )
+
+            row = conn.execute(
+                """
+                SELECT *
+                FROM task_idempotency
+                WHERE tenant_id = ?
+                  AND operation_key = ?
+                """,
+                (tenant_id, operation_key),
+            ).fetchone()
+
+        return dict(row)
 
 __all__ = ["SQLiteTaskStore"]

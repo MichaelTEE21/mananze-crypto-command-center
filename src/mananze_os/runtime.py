@@ -417,6 +417,49 @@ class MananzeRuntime:
                 lease_id=lease_id,
             )
 
+            # Claim the protected logical operation before creating any
+            # downstream execution effects. The operation identity is
+            # stable for this work order/execution and therefore remains
+            # unchanged across retry of the same durable task.
+            operation_key = self.task_store.operation_key(
+                prepared.work_order.tenant_id,
+                task_id,
+                execution_id,
+                "controlled-execution",
+            )
+
+            claimed_operation = self.task_store.claim_operation(
+                tenant_id=prepared.work_order.tenant_id,
+                operation_key=operation_key,
+                task_id=task_id,
+                execution_id=execution_id,
+                lease_id=lease_id,
+            )
+
+            if not claimed_operation:
+                existing_operation = self.task_store.idempotency_record(
+                    tenant_id=prepared.work_order.tenant_id,
+                    operation_key=operation_key,
+                )
+
+                if existing_operation is None:
+                    raise RuntimeError(
+                        "idempotency claim was lost without a durable record"
+                    )
+
+                if existing_operation["status"] == "completed":
+                    raise RuntimeError(
+                        "protected operation already completed; "
+                        "replay must be handled by the execution caller"
+                    )
+
+                raise RuntimeError(
+                    "protected operation is already in progress"
+                )
+
+        else:
+            operation_key = None
+
         for planned_role in prepared.workforce.roles:
             self.workforce_fabric.assign_role(
                 assignment_id=(
@@ -535,6 +578,22 @@ class MananzeRuntime:
             raise RuntimeError(
                 "execution verification failed: "
                 + "; ".join(verification.reasons)
+            )
+
+        if self.task_store is not None and operation_key is not None:
+            self.task_store.complete_operation(
+                tenant_id=prepared.work_order.tenant_id,
+                operation_key=operation_key,
+                lease_id=lease_id,
+                result={
+                    "work_order_id": prepared.work_order.work_order_id,
+                    "execution_id": execution_id,
+                    "status": execution_state.status,
+                },
+                evidence={
+                    "verification": verification.verified,
+                    "evidence_count": len(evidence),
+                },
             )
 
         if self.task_store is not None:
