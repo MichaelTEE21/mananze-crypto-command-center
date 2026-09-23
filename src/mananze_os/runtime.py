@@ -30,6 +30,7 @@ from mananze_os.policy_decision import PolicyDecision
 from mananze_os.policy_engine import PolicyEngine
 from mananze_os.quality_controller import QualityAssessment, QualityControllerIntelligence
 from mananze_os.task_scheduler import ScheduledTask, TaskScheduler
+from mananze_os.sqlite_task_store import SQLiteTaskStore
 from mananze_os.tenant import Tenant
 from mananze_os.workforce_planner import (
     DynamicWorkforcePlan,
@@ -73,6 +74,7 @@ class MananzeRuntime:
         tenants: tuple[Tenant, ...] = (),
         authorities: tuple[Authority, ...] = (),
         permissions: tuple[CapabilityPermission, ...] = (),
+        task_store: SQLiteTaskStore | None = None,
     ) -> None:
         self.input_gate = InputGate()
         self.action_gate = ActionGate()
@@ -88,6 +90,7 @@ class MananzeRuntime:
         self.request_lifecycle = RequestLifecycle()
         self.processing_mode_decider = ProcessingModeDecider()
         self.execution_context_integrity = ExecutionContextIntegrity()
+        self.task_store = task_store
         self.execution_verifier = ExecutionVerifier()
         self.task_scheduler = TaskScheduler()
         self.tenants = tenants
@@ -249,6 +252,8 @@ class MananzeRuntime:
         )
 
         self.task_scheduler.submit(scheduled_task)
+        if self.task_store is not None:
+            self.task_store.save(scheduled_task)
 
         request_state, _ = self.request_lifecycle.transition(
             request_state,
@@ -317,6 +322,20 @@ class MananzeRuntime:
                 "execution state and approval execution IDs do not match"
             )
 
+        approver = next(
+            (
+                authority
+                for authority in self.authorities
+                if authority.actor_id == approved_by
+            ),
+            None,
+        )
+
+        if approver is None or approver.level != "human" or not approver.can_execute:
+            raise PermissionError(
+                "approved_by is not an authorized human execution authority"
+            )
+
         approved = self.approval_gate.approve(
             prepared.approval,
             approved_by,
@@ -333,6 +352,15 @@ class MananzeRuntime:
         )
 
         execution_id = approved.execution_id
+
+        task_id = f"task:{prepared.work_order.work_order_id}"
+        lease_id = f"lease:{execution_id}"
+
+        if self.task_store is not None:
+            self.task_store.start(
+                task_id=task_id,
+                lease_id=lease_id,
+            )
 
         for planned_role in prepared.workforce.roles:
             self.workforce_fabric.assign_role(
@@ -452,6 +480,12 @@ class MananzeRuntime:
             raise RuntimeError(
                 "execution verification failed: "
                 + "; ".join(verification.reasons)
+            )
+
+        if self.task_store is not None:
+            self.task_store.complete(
+                task_id=task_id,
+                lease_id=lease_id,
             )
 
         request_state, _ = self.request_lifecycle.transition(
