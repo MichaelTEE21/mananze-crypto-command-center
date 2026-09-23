@@ -325,13 +325,16 @@ class MananzeRuntime:
         recovered: list[ScheduledTask] = []
 
         for task in stale_tasks:
-            recovered.append(
-                self.task_store.recover(
-                    task_id=task.task_id,
-                    stale_after=stale_after,
-                    now=now,
-                )
+            recovered_task = self.task_store.recover(
+                task_id=task.task_id,
+                stale_after=stale_after,
+                now=now,
             )
+
+            if recovered_task.status == "queued":
+                self.task_scheduler.restore_queued(recovered_task)
+
+            recovered.append(recovered_task)
 
         return tuple(recovered)
 

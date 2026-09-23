@@ -137,6 +137,33 @@ class TaskScheduler:
         self._tasks[task.task_id] = task
         return task
 
+    def restore_queued(self, task: ScheduledTask) -> ScheduledTask:
+        """Synchronize an existing queued task after durable recovery.
+
+        The durable task store remains authoritative for execution leases,
+        retry accounting, and recovery. The scheduler only refreshes its
+        in-memory scheduling view.
+        """
+        if task.status != "queued":
+            raise ValueError("only queued tasks may be restored")
+
+        current = self._tasks.get(task.task_id)
+
+        if current is None:
+            self._tasks[task.task_id] = task
+            return task
+
+        if current.tenant_id != task.tenant_id:
+            raise ValueError("task tenant does not match scheduler state")
+
+        if current.execution_id != task.execution_id:
+            raise ValueError(
+                "task execution ID does not match scheduler state"
+            )
+
+        self._tasks[task.task_id] = task
+        return task
+
     def get(self, task_id: str) -> ScheduledTask:
         if not task_id.strip():
             raise ValueError("task_id is required")

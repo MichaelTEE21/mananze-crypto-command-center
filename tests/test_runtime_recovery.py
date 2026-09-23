@@ -5,6 +5,7 @@ import pytest
 from mananze_os.runtime import MananzeRuntime
 from mananze_os.sqlite_task_store import SQLiteTaskStore
 from mananze_os.task_scheduler import ScheduledTask, TaskBudget
+from mananze_os.task_scheduler import TaskScheduler
 
 
 def make_task(task_id="task:recovery"):
@@ -134,3 +135,84 @@ def test_runtime_recovery_respects_tenant_and_limit(tmp_path):
     assert tuple(task.task_id for task in recovered) == ("task:a",)
     assert store.get("task:a").status == "queued"
     assert store.get("task:b").status == "running"
+
+
+def test_recovered_task_is_visible_to_scheduler_for_new_worker_claim(tmp_path):
+    store = SQLiteTaskStore(tmp_path / "tasks.db")
+    runtime = MananzeRuntime(task_store=store)
+    scheduler = runtime.task_scheduler
+
+    task = ScheduledTask(
+        task_id="task:worker-restart",
+        tenant_id="tenant-a",
+        execution_id="exec:worker-restart",
+        priority=10,
+        budget=TaskBudget(max_attempts=3),
+    )
+
+    runtime.task_scheduler.submit(task)
+    store.save(task)
+
+    first_lease = "lease:first-worker"
+    first_now = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+    stale_now = first_now + timedelta(minutes=10)
+
+    store.start(
+        task_id=task.task_id,
+        lease_id=first_lease,
+        now=first_now,
+    )
+    store.heartbeat(
+        task_id=task.task_id,
+        lease_id=first_lease,
+        now=first_now,
+    )
+
+    recovered = runtime.recover_stale_tasks(
+        stale_after=timedelta(minutes=5),
+        tenant_id="tenant-a",
+        now=stale_now,
+    )[0]
+
+    assert recovered.status == "queued"
+    assert recovered.attempt == 1
+
+    scheduler.restore_queued(recovered)
+
+    selected = scheduler.next_task(
+        tenant_id="tenant-a",
+        now=stale_now,
+    )
+
+    assert selected is not None
+    assert selected.task_id == task.task_id
+    assert selected.status == "queued"
+
+    second_lease = "lease:second-worker"
+
+    claimed = store.start(
+        task_id=selected.task_id,
+        lease_id=second_lease,
+        now=stale_now,
+    )
+
+    assert claimed.status == "running"
+    assert store.recovery(task.task_id).lease_id == second_lease
+
+    with pytest.raises(
+        PermissionError,
+        match="task is not running under the supplied lease",
+    ):
+        store.complete(
+            task_id=task.task_id,
+            lease_id=first_lease,
+            now=stale_now,
+        )
+
+    completed = store.complete(
+        task_id=task.task_id,
+        lease_id=second_lease,
+        now=stale_now,
+    )
+
+    assert completed.status == "completed"
