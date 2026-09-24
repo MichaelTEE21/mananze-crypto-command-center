@@ -2,6 +2,7 @@
 
 from mananze_os.capability_registry import CapabilityRegistry
 from mananze_os.skill_registry import SkillRegistry
+from mananze_os.tool_registry import ToolRegistry
 
 from .catalog import CAPABILITIES, HubCapability
 
@@ -10,6 +11,7 @@ def validate_catalog(
     capabilities: tuple[HubCapability, ...] = CAPABILITIES,
     os_registry: CapabilityRegistry | None = None,
     skill_registry: SkillRegistry | None = None,
+    tool_registry: ToolRegistry | None = None,
 ) -> tuple[str, ...]:
     """Validate Hub capability manifests against authoritative OS registries.
 
@@ -74,6 +76,25 @@ def validate_catalog(
                         f"{skill.capability_id}, which is not mapped"
                     )
 
+    if tool_registry is not None:
+        for capability in capabilities:
+            for tool_id in capability.tool_ids:
+                try:
+                    tool = tool_registry.get(tool_id)
+                except KeyError:
+                    errors.append(
+                        f"{capability.capability_id}: "
+                        f"unknown OS tool: {tool_id}"
+                    )
+                    continue
+
+                if tool.capability_id not in capability.os_capability_ids:
+                    errors.append(
+                        f"{capability.capability_id}: "
+                        f"tool {tool_id} belongs to OS capability "
+                        f"{tool.capability_id}, which is not mapped"
+                    )
+
     return tuple(errors)
 
 
@@ -81,12 +102,14 @@ def assert_valid_catalog(
     capabilities: tuple[HubCapability, ...] = CAPABILITIES,
     os_registry: CapabilityRegistry | None = None,
     skill_registry: SkillRegistry | None = None,
+    tool_registry: ToolRegistry | None = None,
 ) -> None:
     """Raise ValueError when the Hub capability catalog is invalid."""
     errors = validate_catalog(
         capabilities=capabilities,
         os_registry=os_registry,
         skill_registry=skill_registry,
+        tool_registry=tool_registry,
     )
 
     if errors:

@@ -58,6 +58,7 @@ class HubCapability:
     evidence_requirements: tuple[str, ...] = ()
 
     os_capability_ids: tuple[str, ...] = ()
+    tool_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.capability_id.strip():
@@ -80,6 +81,7 @@ class HubCapability:
         self._validate_unique("supported_channels", self.supported_channels)
         self._validate_unique("evidence_requirements", self.evidence_requirements)
         self._validate_unique("os_capability_ids", self.os_capability_ids)
+        self._validate_unique("tool_ids", self.tool_ids)
 
     @staticmethod
     def _validate_unique(name: str, values: tuple[str, ...]) -> None:
