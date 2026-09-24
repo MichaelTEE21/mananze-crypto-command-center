@@ -64,3 +64,69 @@ def test_intelligence_observation_cannot_create_an_unknown_capability() -> None:
 
     assert intelligence.value["capability_id"] == "execute_bank_transfer"
     assert "execute_bank_transfer" not in capability_ids
+
+
+def test_compiler_accepts_explicit_capability_candidates() -> None:
+    compiler = IntelligenceCompiler()
+
+    work_order = WorkOrder(
+        work_order_id="wo-explicit-candidates",
+        tenant_id="tenant-a",
+        objective="automate the business",
+    )
+
+    compiled = compiler.compile(
+        work_order,
+        candidate_capability_ids=("marketing", "sales", "revenue"),
+    )
+
+    assert tuple(
+        requirement.capability_id
+        for requirement in compiled.requirements
+    ) == ("marketing", "sales", "revenue")
+
+
+def test_compiler_rejects_unknown_candidate_capability() -> None:
+    compiler = IntelligenceCompiler()
+
+    work_order = WorkOrder(
+        work_order_id="wo-unknown-candidate",
+        tenant_id="tenant-a",
+        objective="automate the business",
+    )
+
+    try:
+        compiler.compile(
+            work_order,
+            candidate_capability_ids=("marketing", "unknown_capability"),
+        )
+    except KeyError as exc:
+        assert "unknown capability" in str(exc)
+    else:
+        raise AssertionError("unknown capability was accepted")
+
+
+def test_compiler_deduplicates_explicit_candidates() -> None:
+    compiler = IntelligenceCompiler()
+
+    work_order = WorkOrder(
+        work_order_id="wo-deduplicate-candidates",
+        tenant_id="tenant-a",
+        objective="automate the business",
+    )
+
+    compiled = compiler.compile(
+        work_order,
+        candidate_capability_ids=(
+            "marketing",
+            "sales",
+            "marketing",
+            "revenue",
+            "sales",
+        ),
+    )
+
+    assert tuple(
+        requirement.capability_id
+        for requirement in compiled.requirements
+    ) == ("marketing", "sales", "revenue")
