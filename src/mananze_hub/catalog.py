@@ -44,6 +44,7 @@ class HubCapability:
     outputs: tuple[str, ...] = ()
     dependencies: tuple[str, ...] = ()
     permissions: tuple[str, ...] = ()
+    required_skill_ids: tuple[str, ...] = ()
 
     risk: CapabilityRisk = "medium"
     supported_channels: tuple[str, ...] = (
@@ -75,6 +76,7 @@ class HubCapability:
         self._validate_unique("outputs", self.outputs)
         self._validate_unique("dependencies", self.dependencies)
         self._validate_unique("permissions", self.permissions)
+        self._validate_unique("required_skill_ids", self.required_skill_ids)
         self._validate_unique("supported_channels", self.supported_channels)
         self._validate_unique("evidence_requirements", self.evidence_requirements)
         self._validate_unique("os_capability_ids", self.os_capability_ids)
@@ -104,6 +106,10 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
         permissions=("business_data:read", "marketing:manage"),
         risk="medium",
         evidence_requirements=("source_inputs", "generated_outputs"),
+        required_skill_ids=(
+            "marketing:campaign_planning",
+            "marketing:content_creation",
+        ),
         os_capability_ids=("marketing",),
     ),
     HubCapability(
@@ -116,6 +122,10 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
         permissions=("customer_data:read", "sales:manage"),
         risk="high",
         evidence_requirements=("source_inputs", "action_results"),
+        required_skill_ids=(
+            "sales:lead_qualification",
+            "sales:follow_up",
+        ),
         os_capability_ids=("sales",),
     ),
     HubCapability(
@@ -128,6 +138,9 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
         permissions=("business_data:read", "revenue:manage"),
         risk="high",
         evidence_requirements=("source_inputs", "analysis_results"),
+        required_skill_ids=(
+            "revenue:performance_analysis",
+        ),
         os_capability_ids=("revenue",),
     ),
     HubCapability(
@@ -172,6 +185,9 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
         permissions=("business_data:read",),
         risk="medium",
         evidence_requirements=("source_data", "analysis_results"),
+        required_skill_ids=(
+            "reporting:business_reporting",
+        ),
         os_capability_ids=("reporting",),
     ),
     HubCapability(
@@ -190,6 +206,11 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
             "voice",
         ),
         evidence_requirements=("customer_request", "communication_result"),
+        required_skill_ids=(
+            "customer_communications:messaging",
+            "retention:engagement",
+            "reporting:business_reporting",
+        ),
         os_capability_ids=(
             "customer_communications",
             "retention",
@@ -205,6 +226,13 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
         permissions=("operations_data:read", "logistics:manage"),
         risk="high",
         evidence_requirements=("source_inputs", "planning_results", "action_results"),
+        required_skill_ids=(
+            "logistics:route_planning",
+            "fleet:fleet_monitoring",
+            "cost_analysis:cost_review",
+            "revenue:performance_analysis",
+            "reporting:business_reporting",
+        ),
         os_capability_ids=(
             "logistics",
             "fleet",
@@ -233,6 +261,10 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
         permissions=("operations_data:read", "project_data:manage"),
         risk="high",
         evidence_requirements=("source_documents", "project_results"),
+        required_skill_ids=(
+            "operations:workflow_coordination",
+            "reporting:business_reporting",
+        ),
         os_capability_ids=("operations", "reporting"),
     ),
 )

@@ -1,6 +1,7 @@
 """MANANZE HUB capability catalog validation."""
 
 from mananze_os.capability_registry import CapabilityRegistry
+from mananze_os.skill_registry import SkillRegistry
 
 from .catalog import CAPABILITIES, HubCapability
 
@@ -8,8 +9,9 @@ from .catalog import CAPABILITIES, HubCapability
 def validate_catalog(
     capabilities: tuple[HubCapability, ...] = CAPABILITIES,
     os_registry: CapabilityRegistry | None = None,
+    skill_registry: SkillRegistry | None = None,
 ) -> tuple[str, ...]:
-    """Validate Hub capability manifests against the authoritative OS registry.
+    """Validate Hub capability manifests against authoritative OS registries.
 
     This function validates declarations only. It does not compile work,
     select execution plans, authorize actions, or execute capabilities.
@@ -29,6 +31,7 @@ def validate_catalog(
             errors.append(
                 f"duplicate capability_id: {capability_id}"
             )
+
         seen_ids.add(capability_id)
 
     capability_id_set = set(capability_ids)
@@ -52,17 +55,38 @@ def validate_catalog(
                         f"unknown OS capability: {os_capability_id}"
                     )
 
+    if skill_registry is not None:
+        for capability in capabilities:
+            for skill_id in capability.required_skill_ids:
+                try:
+                    skill = skill_registry.get(skill_id)
+                except KeyError:
+                    errors.append(
+                        f"{capability.capability_id}: "
+                        f"unknown OS skill: {skill_id}"
+                    )
+                    continue
+
+                if skill.capability_id not in capability.os_capability_ids:
+                    errors.append(
+                        f"{capability.capability_id}: "
+                        f"skill {skill_id} belongs to OS capability "
+                        f"{skill.capability_id}, which is not mapped"
+                    )
+
     return tuple(errors)
 
 
 def assert_valid_catalog(
     capabilities: tuple[HubCapability, ...] = CAPABILITIES,
     os_registry: CapabilityRegistry | None = None,
+    skill_registry: SkillRegistry | None = None,
 ) -> None:
     """Raise ValueError when the Hub capability catalog is invalid."""
     errors = validate_catalog(
         capabilities=capabilities,
         os_registry=os_registry,
+        skill_registry=skill_registry,
     )
 
     if errors:
