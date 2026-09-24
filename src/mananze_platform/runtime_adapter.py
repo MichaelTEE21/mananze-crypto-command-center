@@ -1,4 +1,4 @@
-﻿"""Mananze Platform -> Mananze OS integration boundary.
+"""Mananze Platform -> Mananze OS integration boundary.
 
 The Platform owns customer intake and experience.
 Mananze OS remains authoritative for planning, policy, authorization,
@@ -15,6 +15,10 @@ from mananze_os.input_request import InputRequest
 from mananze_os.runtime import MananzeRuntime, RuntimeResult
 from mananze_os.tenant import Tenant
 
+from .capability_discovery import (
+    CapabilityCandidate,
+    resolve_os_capability_candidates,
+)
 from .intake import BusinessIntake
 
 
@@ -26,6 +30,7 @@ class PlatformRuntimeRequest:
     authority: Authority
     intake: BusinessIntake
     objective: str
+    capability_candidates: tuple[CapabilityCandidate, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.objective.strip():
@@ -40,6 +45,10 @@ class PlatformRuntimeRequest:
 
 def to_input_request(request: PlatformRuntimeRequest) -> InputRequest:
     """Translate a Platform request into the OS input contract."""
+    candidate_capability_ids = resolve_os_capability_candidates(
+        request.capability_candidates
+    )
+
     return InputRequest(
         request_id=request.intake.intake_id,
         tenant_id=request.tenant.tenant_id,
@@ -47,6 +56,7 @@ def to_input_request(request: PlatformRuntimeRequest) -> InputRequest:
         objective=request.objective.strip(),
         channel=request.intake.source.value,
         processing_mode="standard",
+        candidate_capability_ids=candidate_capability_ids,
     )
 
 

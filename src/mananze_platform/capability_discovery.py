@@ -1,4 +1,4 @@
-﻿"""Business-context capability discovery for Mananze Hub.
+"""Business-context capability discovery for Mananze Hub.
 
 This layer identifies potentially relevant Hub capabilities from structured
 observations. It does not execute, approve, authorize, or route actions.
@@ -145,3 +145,24 @@ def discover_capabilities(
             )
 
     return tuple(candidates)
+
+
+def resolve_os_capability_candidates(
+    candidates: tuple[CapabilityCandidate, ...],
+) -> tuple[str, ...]:
+    """Translate Hub candidates into declared OS capability IDs.
+
+    This function is a translation boundary only. It does not decide whether
+    an OS capability is valid or executable. The OS compiler and capability
+    registry remain authoritative.
+    """
+    resolved: list[str] = []
+    seen: set[str] = set()
+
+    for candidate in candidates:
+        for capability_id in candidate.capability.os_capability_ids:
+            if capability_id not in seen:
+                seen.add(capability_id)
+                resolved.append(capability_id)
+
+    return tuple(resolved)

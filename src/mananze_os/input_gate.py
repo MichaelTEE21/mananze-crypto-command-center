@@ -1,4 +1,4 @@
-﻿"""Mananze OS input gate foundation service."""
+"""Mananze OS input gate foundation service."""
 
 from mananze_os.input_request import InputRequest
 from mananze_os.work_order import WorkOrder
@@ -20,10 +20,22 @@ class InputGate:
         if not request.objective.strip():
             raise ValueError("objective is required")
 
+        candidate_capability_ids = tuple(
+            capability_id.strip()
+            for capability_id in request.candidate_capability_ids
+        )
+
+        if any(not capability_id for capability_id in candidate_capability_ids):
+            raise ValueError("candidate_capability_ids cannot contain blank values")
+
+        if len(candidate_capability_ids) != len(set(candidate_capability_ids)):
+            raise ValueError("candidate_capability_ids cannot contain duplicates")
+
         return WorkOrder(
             work_order_id=request.request_id,
             tenant_id=request.tenant_id,
             objective=request.objective.strip(),
+            candidate_capability_ids=candidate_capability_ids,
         )
 
 

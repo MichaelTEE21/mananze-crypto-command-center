@@ -84,7 +84,11 @@ class IntelligenceCompiler:
 
         return tuple(requirements)
 
-    def compile(self, work_order: WorkOrder) -> CompiledPlan:
+    def compile(
+        self,
+        work_order: WorkOrder,
+        candidate_capability_ids: tuple[str, ...] | None = None,
+    ) -> CompiledPlan:
         if not work_order.work_order_id.strip():
             raise ValueError("work_order_id is required")
 
@@ -95,7 +99,32 @@ class IntelligenceCompiler:
             raise ValueError("objective is required")
 
         objective = work_order.objective.strip()
-        requirements = self._compile_requirements(objective)
+
+        if candidate_capability_ids is not None:
+            seen: set[str] = set()
+            requirements_list: list[CompiledRequirement] = []
+
+            for capability_id in candidate_capability_ids:
+                normalized = capability_id.strip()
+
+                if not normalized:
+                    raise ValueError("candidate capability_id is required")
+
+                if normalized in seen:
+                    continue
+
+                # The OS registry remains authoritative.
+                self.capability_registry.get(normalized)
+
+                seen.add(normalized)
+                requirements_list.append(
+                    CompiledRequirement(capability_id=normalized)
+                )
+
+            requirements = tuple(requirements_list)
+        else:
+            # Backward-compatible path for existing callers.
+            requirements = self._compile_requirements(objective)
 
         return CompiledPlan(
             work_order_id=work_order.work_order_id,

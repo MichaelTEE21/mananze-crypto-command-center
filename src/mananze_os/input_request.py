@@ -23,6 +23,7 @@ class InputRequest:
     objective: str
     channel: str = "web"
     processing_mode: ProcessingMode = "standard"
+    candidate_capability_ids: tuple[str, ...] = ()
 
 
 __all__ = ["InputRequest", "ProcessingMode"]

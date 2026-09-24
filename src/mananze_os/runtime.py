@@ -198,7 +198,7 @@ class MananzeRuntime:
             "compiling",
         )
 
-        plan = self.compiler.compile(work_order)
+        plan = self.compiler.compile(work_order, candidate_capability_ids=work_order.candidate_capability_ids or None)
 
         request_state, _ = self.request_lifecycle.transition(
             request_state,
