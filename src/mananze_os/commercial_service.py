@@ -35,6 +35,22 @@ class CommercialExecution:
     referral_entry: ReferralLedgerEntry | None
 
 
+@dataclass(frozen=True)
+class ProviderChargeReconciliation:
+    """Result of reconciling one successful provider execution."""
+
+    execution_id: str
+    provider_id: str
+    tool_id: str
+    tenant_id: str
+    actual_cost: Decimal
+    cost_currency: str
+    client_charge: Decimal
+    pricing_policy_id: str
+    billing_period: str
+    reconciled: bool
+
+
 class CommercialService:
     """Coordinate economic calculation, ledger state, and persistence."""
 
@@ -50,6 +66,7 @@ class CommercialService:
         )
         self.ledger = ledger or CommercialLedger()
         self.store = store
+        self._reconciled_provider_executions: set[str] = set()
 
     def create_subscription(
         self,
@@ -177,7 +194,85 @@ class CommercialService:
         return referral, entry
 
 
+    def reconcile_provider_usage(
+        self,
+        *,
+        usage_record,
+        plan: SubscriptionPlan,
+        pricing_policy: PricingPolicy,
+        billing_period: str,
+    ) -> ProviderChargeReconciliation:
+        """Convert one successful provider observation into a durable charge.
+
+        ProviderUsageLedger remains an observation layer. This method is the
+        commercial boundary that applies Economic Governor pricing and records
+        the resulting client charge.
+
+        Provider cost and client charge remain separate values.
+        """
+
+        if not billing_period.strip():
+            raise ValueError("billing_period is required")
+
+        if not usage_record.success:
+            raise ValueError(
+                "failed provider executions cannot become client charges"
+            )
+
+        if usage_record.cost < 0:
+            raise ValueError("provider cost cannot be negative")
+
+        if usage_record.cost_currency != plan.currency:
+            raise ValueError(
+                "provider cost currency must match plan currency; "
+                "FX normalization is required before reconciliation"
+            )
+
+        if usage_record.tenant_id.strip() == "":
+            raise ValueError("tenant_id is required")
+
+        client_charge = self.economic_governor.calculate_cost_charge(
+            actual_cost=Decimal(str(usage_record.cost)),
+            policy=pricing_policy,
+        )
+
+        if self.store is not None:
+            reconciled = self.store.add_provider_charge(
+                execution_id=usage_record.execution_id,
+                provider_id=usage_record.provider_id,
+                tool_id=usage_record.tool_id,
+                tenant_id=usage_record.tenant_id,
+                actual_cost=Decimal(str(usage_record.cost)),
+                cost_currency=usage_record.cost_currency,
+                client_charge=client_charge,
+                pricing_policy_id=pricing_policy.policy_id,
+                billing_period=billing_period,
+            )
+        else:
+            if usage_record.execution_id in self._reconciled_provider_executions:
+                reconciled = False
+            else:
+                self._reconciled_provider_executions.add(
+                    usage_record.execution_id
+                )
+                reconciled = True
+
+        return ProviderChargeReconciliation(
+            execution_id=usage_record.execution_id,
+            provider_id=usage_record.provider_id,
+            tool_id=usage_record.tool_id,
+            tenant_id=usage_record.tenant_id,
+            actual_cost=Decimal(str(usage_record.cost)),
+            cost_currency=usage_record.cost_currency,
+            client_charge=client_charge,
+            pricing_policy_id=pricing_policy.policy_id,
+            billing_period=billing_period,
+            reconciled=reconciled,
+        )
+
+
 __all__ = [
     "CommercialExecution",
     "CommercialService",
+    "ProviderChargeReconciliation",
 ]

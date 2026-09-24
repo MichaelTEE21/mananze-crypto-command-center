@@ -86,3 +86,281 @@ def test_commercial_service_subscription_billing_and_referral():
 
     assert ledger.get_billing_entry("bill-001").amount_due == Decimal("1550.00")
     assert ledger.get_referral("ref-001").reward_amount == Decimal("150.00")
+
+def test_reconcile_provider_usage_applies_pricing_and_is_idempotent():
+    from mananze_os.provider_observability import ProviderUsageLedger
+
+    plan = SubscriptionPlan(
+        plan_id="level-2",
+        name="Level 2",
+        monthly_price=Decimal("1500.00"),
+        currency="ZAR",
+    )
+
+    pricing = PricingPolicy(
+        policy_id="standard-margin",
+        markup_rate=Decimal("0.75"),
+    )
+
+    usage_ledger = ProviderUsageLedger()
+    usage_record = usage_ledger.record(
+        provider_id="provider-openai",
+        tool_id="ai-completion",
+        tenant_id="tenant-001",
+        execution_id="exec-001",
+        success=True,
+        latency_ms=120.0,
+        usage={"input_tokens": 100, "output_tokens": 50},
+        cost=0.20,
+        cost_currency="ZAR",
+    )
+
+    service = CommercialService()
+
+    first = service.reconcile_provider_usage(
+        usage_record=usage_record,
+        plan=plan,
+        pricing_policy=pricing,
+        billing_period="2026-09",
+    )
+
+    second = service.reconcile_provider_usage(
+        usage_record=usage_record,
+        plan=plan,
+        pricing_policy=pricing,
+        billing_period="2026-09",
+    )
+
+    assert first.reconciled is True
+    assert first.actual_cost == Decimal("0.20")
+    assert first.client_charge == Decimal("0.35")
+
+    assert second.reconciled is False
+    assert second.client_charge == Decimal("0.35")
+
+
+def test_reconcile_provider_usage_rejects_failed_execution():
+    from mananze_os.provider_observability import ProviderUsageLedger
+
+    plan = SubscriptionPlan(
+        plan_id="level-2",
+        name="Level 2",
+        monthly_price=Decimal("1500.00"),
+        currency="ZAR",
+    )
+
+    pricing = PricingPolicy(
+        policy_id="standard-margin",
+        markup_rate=Decimal("0.75"),
+    )
+
+    usage_ledger = ProviderUsageLedger()
+    usage_record = usage_ledger.record(
+        provider_id="provider-openai",
+        tool_id="ai-completion",
+        tenant_id="tenant-001",
+        execution_id="exec-failed",
+        success=False,
+        latency_ms=120.0,
+        usage=None,
+        cost=0.0,
+        cost_currency="ZAR",
+    )
+
+    service = CommercialService()
+
+    try:
+        service.reconcile_provider_usage(
+            usage_record=usage_record,
+            plan=plan,
+            pricing_policy=pricing,
+            billing_period="2026-09",
+        )
+    except ValueError as exc:
+        assert "failed provider executions" in str(exc)
+    else:
+        raise AssertionError("failed execution was incorrectly billable")
+
+
+def test_reconcile_provider_usage_rejects_currency_mismatch():
+    from mananze_os.provider_observability import ProviderUsageLedger
+
+    plan = SubscriptionPlan(
+        plan_id="level-2",
+        name="Level 2",
+        monthly_price=Decimal("1500.00"),
+        currency="ZAR",
+    )
+
+    pricing = PricingPolicy(
+        policy_id="standard-margin",
+        markup_rate=Decimal("0.75"),
+    )
+
+    usage_ledger = ProviderUsageLedger()
+    usage_record = usage_ledger.record(
+        provider_id="provider-openai",
+        tool_id="ai-completion",
+        tenant_id="tenant-001",
+        execution_id="exec-usd",
+        success=True,
+        latency_ms=120.0,
+        usage={"tokens": 100},
+        cost=0.20,
+        cost_currency="USD",
+    )
+
+    service = CommercialService()
+
+    try:
+        service.reconcile_provider_usage(
+            usage_record=usage_record,
+            plan=plan,
+            pricing_policy=pricing,
+            billing_period="2026-09",
+        )
+    except ValueError as exc:
+        assert "currency" in str(exc).lower()
+    else:
+        raise AssertionError("currency mismatch was incorrectly accepted")
+
+def test_reconcile_provider_usage_persists_to_sqlite_and_survives_restart(tmp_path):
+    from mananze_os.provider_observability import ProviderUsageLedger
+    from mananze_os.sqlite_commercial_store import SQLiteCommercialStore
+
+    db_path = tmp_path / "commercial.db"
+
+    plan = SubscriptionPlan(
+        plan_id="level-2",
+        name="Level 2",
+        monthly_price=Decimal("1500.00"),
+        currency="ZAR",
+    )
+
+    pricing = PricingPolicy(
+        policy_id="standard-margin",
+        markup_rate=Decimal("0.75"),
+    )
+
+    usage_ledger = ProviderUsageLedger()
+    usage_record = usage_ledger.record(
+        provider_id="provider-openai",
+        tool_id="ai-completion",
+        tenant_id="tenant-001",
+        execution_id="exec-durable-001",
+        success=True,
+        latency_ms=100.0,
+        usage={"input_tokens": 100},
+        cost=Decimal("200.00"),
+        cost_currency="ZAR",
+    )
+
+    store = SQLiteCommercialStore(db_path)
+    service = CommercialService(store=store)
+
+    first = service.reconcile_provider_usage(
+        usage_record=usage_record,
+        plan=plan,
+        pricing_policy=pricing,
+        billing_period="2026-09",
+    )
+
+    assert first.reconciled is True
+    assert first.client_charge == Decimal("350.00")
+
+    persisted = store.get_provider_charge("exec-durable-001")
+
+    assert persisted["execution_id"] == "exec-durable-001"
+    assert persisted["tenant_id"] == "tenant-001"
+    assert persisted["actual_cost"] == "200.00"
+    assert persisted["client_charge"] == "350.00"
+    assert persisted["billing_period"] == "2026-09"
+
+    # Simulate a new service/store instance after restart.
+    restarted_store = SQLiteCommercialStore(db_path)
+    restarted_service = CommercialService(store=restarted_store)
+
+    second = restarted_service.reconcile_provider_usage(
+        usage_record=usage_record,
+        plan=plan,
+        pricing_policy=pricing,
+        billing_period="2026-09",
+    )
+
+    assert second.reconciled is False
+
+    charges = restarted_store.list_provider_charges(
+        tenant_id="tenant-001"
+    )
+
+    assert len(charges) == 1
+    assert charges[0]["execution_id"] == "exec-durable-001"
+
+
+def test_reconcile_provider_usage_is_tenant_scoped(tmp_path):
+    from mananze_os.provider_observability import ProviderUsageLedger
+    from mananze_os.sqlite_commercial_store import SQLiteCommercialStore
+
+    db_path = tmp_path / "commercial.db"
+
+    plan = SubscriptionPlan(
+        plan_id="level-2",
+        name="Level 2",
+        monthly_price=Decimal("1500.00"),
+        currency="ZAR",
+    )
+
+    pricing = PricingPolicy(
+        policy_id="standard-margin",
+        markup_rate=Decimal("0.75"),
+    )
+
+    usage_ledger = ProviderUsageLedger()
+
+    tenant_a = usage_ledger.record(
+        provider_id="provider-a",
+        tool_id="tool-a",
+        tenant_id="tenant-a",
+        execution_id="exec-a",
+        success=True,
+        latency_ms=50.0,
+        usage={"units": 1},
+        cost=Decimal("10.00"),
+        cost_currency="ZAR",
+    )
+
+    tenant_b = usage_ledger.record(
+        provider_id="provider-b",
+        tool_id="tool-b",
+        tenant_id="tenant-b",
+        execution_id="exec-b",
+        success=True,
+        latency_ms=50.0,
+        usage={"units": 1},
+        cost=Decimal("20.00"),
+        cost_currency="ZAR",
+    )
+
+    store = SQLiteCommercialStore(db_path)
+    service = CommercialService(store=store)
+
+    service.reconcile_provider_usage(
+        usage_record=tenant_a,
+        plan=plan,
+        pricing_policy=pricing,
+        billing_period="2026-09",
+    )
+
+    assert len(store.list_provider_charges(tenant_id="tenant-a")) == 1
+    assert len(store.list_provider_charges(tenant_id="tenant-b")) == 0
+
+    # Tenant B is reconciled independently.
+    service.reconcile_provider_usage(
+        usage_record=tenant_b,
+        plan=plan,
+        pricing_policy=pricing,
+        billing_period="2026-09",
+    )
+
+    assert len(store.list_provider_charges(tenant_id="tenant-a")) == 1
+    assert len(store.list_provider_charges(tenant_id="tenant-b")) == 1

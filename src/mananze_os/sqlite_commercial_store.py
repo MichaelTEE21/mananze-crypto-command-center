@@ -1,6 +1,8 @@
 ﻿"""SQLite-backed durable commercial persistence for Mananze OS.
 
-Persistence for subscriptions, billing entries, and referral ledger entries.
+Persistence for subscriptions, billing entries, referral ledger entries,
+and provider-charge reconciliation.
+
 This module stores commercial state; it does not move money or grant
 financial authority.
 """
@@ -8,9 +10,11 @@ financial authority.
 from __future__ import annotations
 
 import sqlite3
+from contextlib import contextmanager
 from decimal import Decimal
 from pathlib import Path
 from threading import RLock
+from typing import Iterator
 
 from mananze_os.commercial_ledger import (
     BillingLedgerEntry,
@@ -29,7 +33,7 @@ class SQLiteCommercialStore:
 
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
 
-        with self._connect() as conn:
+        with self._connection() as conn:
             conn.executescript(
                 """
                 PRAGMA journal_mode=WAL;
@@ -66,6 +70,19 @@ class SQLiteCommercialStore:
                     status TEXT NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS commercial_provider_charges (
+                    execution_id TEXT PRIMARY KEY,
+                    provider_id TEXT NOT NULL,
+                    tool_id TEXT NOT NULL,
+                    tenant_id TEXT NOT NULL,
+                    actual_cost TEXT NOT NULL,
+                    cost_currency TEXT NOT NULL,
+                    client_charge TEXT NOT NULL,
+                    pricing_policy_id TEXT NOT NULL,
+                    billing_period TEXT NOT NULL,
+                    status TEXT NOT NULL
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_commercial_subscriptions_tenant
                     ON commercial_subscriptions(tenant_id);
 
@@ -74,10 +91,15 @@ class SQLiteCommercialStore:
 
                 CREATE INDEX IF NOT EXISTS idx_commercial_referrals_tenant
                     ON commercial_referrals(referred_tenant_id);
+
+                CREATE INDEX IF NOT EXISTS idx_commercial_provider_charges_tenant
+                    ON commercial_provider_charges(tenant_id, billing_period);
                 """
             )
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connection(self) -> Iterator[sqlite3.Connection]:
+        """Open, transact, and explicitly close a SQLite connection."""
         conn = sqlite3.connect(
             self.path,
             timeout=30.0,
@@ -86,7 +108,15 @@ class SQLiteCommercialStore:
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys=ON")
         conn.execute("PRAGMA synchronous=FULL")
-        return conn
+
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     @staticmethod
     def _row_to_subscription(row: sqlite3.Row) -> SubscriptionRecord:
@@ -129,7 +159,7 @@ class SQLiteCommercialStore:
         self,
         subscription: SubscriptionRecord,
     ) -> SubscriptionRecord:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             try:
                 conn.execute(
                     """
@@ -155,16 +185,14 @@ class SQLiteCommercialStore:
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                if "UNIQUE" in str(exc).upper() or "PRIMARY KEY" in str(exc).upper():
-                    raise ValueError(
-                        f"subscription already exists: {subscription.subscription_id}"
-                    ) from exc
-                raise
+                raise ValueError(
+                    f"subscription already exists: {subscription.subscription_id}"
+                ) from exc
 
         return subscription
 
     def get_subscription(self, subscription_id: str) -> SubscriptionRecord:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             row = conn.execute(
                 """
                 SELECT *
@@ -175,9 +203,7 @@ class SQLiteCommercialStore:
             ).fetchone()
 
         if row is None:
-            raise KeyError(
-                f"unknown subscription: {subscription_id}"
-            )
+            raise KeyError(f"unknown subscription: {subscription_id}")
 
         return self._row_to_subscription(row)
 
@@ -185,7 +211,7 @@ class SQLiteCommercialStore:
         self,
         tenant_id: str | None = None,
     ) -> tuple[SubscriptionRecord, ...]:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             if tenant_id is None:
                 rows = conn.execute(
                     """
@@ -205,16 +231,13 @@ class SQLiteCommercialStore:
                     (tenant_id,),
                 ).fetchall()
 
-        return tuple(
-            self._row_to_subscription(row)
-            for row in rows
-        )
+        return tuple(self._row_to_subscription(row) for row in rows)
 
     def add_billing_entry(
         self,
         entry: BillingLedgerEntry,
     ) -> BillingLedgerEntry:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             try:
                 conn.execute(
                     """
@@ -250,7 +273,7 @@ class SQLiteCommercialStore:
         self,
         billing_id: str,
     ) -> BillingLedgerEntry:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             row = conn.execute(
                 """
                 SELECT *
@@ -261,9 +284,7 @@ class SQLiteCommercialStore:
             ).fetchone()
 
         if row is None:
-            raise KeyError(
-                f"unknown billing entry: {billing_id}"
-            )
+            raise KeyError(f"unknown billing entry: {billing_id}")
 
         return self._row_to_billing(row)
 
@@ -276,7 +297,7 @@ class SQLiteCommercialStore:
         if not payment_id.strip():
             raise ValueError("payment_id is required")
 
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             row = conn.execute(
                 """
                 SELECT *
@@ -287,9 +308,7 @@ class SQLiteCommercialStore:
             ).fetchone()
 
             if row is None:
-                raise KeyError(
-                    f"unknown billing entry: {billing_id}"
-                )
+                raise KeyError(f"unknown billing entry: {billing_id}")
 
             entry = self._row_to_billing(row)
 
@@ -322,10 +341,7 @@ class SQLiteCommercialStore:
                 WHERE billing_id = ?
                   AND status != 'paid'
                 """,
-                (
-                    payment_id,
-                    billing_id,
-                ),
+                (payment_id, billing_id),
             )
 
             if cursor.rowcount != 1:
@@ -348,7 +364,7 @@ class SQLiteCommercialStore:
         self,
         tenant_id: str | None = None,
     ) -> tuple[BillingLedgerEntry, ...]:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             if tenant_id is None:
                 rows = conn.execute(
                     """
@@ -368,16 +384,13 @@ class SQLiteCommercialStore:
                     (tenant_id,),
                 ).fetchall()
 
-        return tuple(
-            self._row_to_billing(row)
-            for row in rows
-        )
+        return tuple(self._row_to_billing(row) for row in rows)
 
     def add_referral(
         self,
         referral: ReferralLedgerEntry,
     ) -> ReferralLedgerEntry:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             try:
                 conn.execute(
                     """
@@ -419,7 +432,7 @@ class SQLiteCommercialStore:
         self,
         referral_id: str,
     ) -> ReferralLedgerEntry:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             row = conn.execute(
                 """
                 SELECT *
@@ -430,9 +443,7 @@ class SQLiteCommercialStore:
             ).fetchone()
 
         if row is None:
-            raise KeyError(
-                f"unknown referral: {referral_id}"
-            )
+            raise KeyError(f"unknown referral: {referral_id}")
 
         return self._row_to_referral(row)
 
@@ -440,7 +451,7 @@ class SQLiteCommercialStore:
         self,
         referred_tenant_id: str | None = None,
     ) -> tuple[ReferralLedgerEntry, ...]:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             if referred_tenant_id is None:
                 rows = conn.execute(
                     """
@@ -460,10 +471,121 @@ class SQLiteCommercialStore:
                     (referred_tenant_id,),
                 ).fetchall()
 
-        return tuple(
-            self._row_to_referral(row)
-            for row in rows
-        )
+        return tuple(self._row_to_referral(row) for row in rows)
+
+    def add_provider_charge(
+        self,
+        *,
+        execution_id: str,
+        provider_id: str,
+        tool_id: str,
+        tenant_id: str,
+        actual_cost: Decimal,
+        cost_currency: str,
+        client_charge: Decimal,
+        pricing_policy_id: str,
+        billing_period: str,
+        status: str = "pending",
+    ) -> bool:
+        """Persist one provider charge.
+
+        Returns False when the execution was already reconciled.
+        """
+        with self._lock, self._connection() as conn:
+            existing = conn.execute(
+                """
+                SELECT tenant_id
+                FROM commercial_provider_charges
+                WHERE execution_id = ?
+                """,
+                (execution_id,),
+            ).fetchone()
+
+            if existing is not None:
+                if existing["tenant_id"] != tenant_id:
+                    raise PermissionError(
+                        "execution belongs to another tenant"
+                    )
+                return False
+
+            conn.execute(
+                """
+                INSERT INTO commercial_provider_charges (
+                    execution_id,
+                    provider_id,
+                    tool_id,
+                    tenant_id,
+                    actual_cost,
+                    cost_currency,
+                    client_charge,
+                    pricing_policy_id,
+                    billing_period,
+                    status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    execution_id,
+                    provider_id,
+                    tool_id,
+                    tenant_id,
+                    str(actual_cost),
+                    cost_currency,
+                    str(client_charge),
+                    pricing_policy_id,
+                    billing_period,
+                    status,
+                ),
+            )
+
+        return True
+
+    def get_provider_charge(
+        self,
+        execution_id: str,
+    ) -> dict[str, object]:
+        with self._lock, self._connection() as conn:
+            row = conn.execute(
+                """
+                SELECT *
+                FROM commercial_provider_charges
+                WHERE execution_id = ?
+                """,
+                (execution_id,),
+            ).fetchone()
+
+        if row is None:
+            raise KeyError(
+                f"unknown provider charge: {execution_id}"
+            )
+
+        return dict(row)
+
+    def list_provider_charges(
+        self,
+        tenant_id: str | None = None,
+    ) -> tuple[dict[str, object], ...]:
+        with self._lock, self._connection() as conn:
+            if tenant_id is None:
+                rows = conn.execute(
+                    """
+                    SELECT *
+                    FROM commercial_provider_charges
+                    ORDER BY billing_period, execution_id
+                    """
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT *
+                    FROM commercial_provider_charges
+                    WHERE tenant_id = ?
+                    ORDER BY billing_period, execution_id
+                    """,
+                    (tenant_id,),
+                ).fetchall()
+
+        return tuple(dict(row) for row in rows)
 
 
 __all__ = ["SQLiteCommercialStore"]
