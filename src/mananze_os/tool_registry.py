@@ -15,6 +15,7 @@ class ToolDefinition:
     required_permission_ids: tuple[str, ...] = ()
     risk: RiskLevel = "low"
     supported_tenant_ids: tuple[str, ...] = ()
+    allowed_provider_ids: tuple[str, ...] = ()
     estimated_cost: float = 0.0
     cost_currency: str = "ZAR"
     timeout_seconds: float = 30.0
@@ -53,6 +54,10 @@ class ToolDefinition:
             if not isinstance(tenant_id, str) or not tenant_id.strip():
                 raise ValueError("supported tenant IDs must be non-empty")
 
+        for provider_id in self.allowed_provider_ids:
+            if not isinstance(provider_id, str) or not provider_id.strip():
+                raise ValueError("allowed provider IDs must be non-empty")
+
 
 class ToolRegistry:
     def __init__(self) -> None:
@@ -89,6 +94,14 @@ class ToolRegistry:
         if not tool.supported_tenant_ids:
             return True
         return tenant_id in tool.supported_tenant_ids
+
+    def supports_provider(self, tool_id: str, provider_id: str) -> bool:
+        tool = self.get(tool_id)
+        if not isinstance(provider_id, str) or not provider_id.strip():
+            raise ValueError("provider_id is required")
+        if not tool.allowed_provider_ids:
+            return True
+        return provider_id in tool.allowed_provider_ids
 
 
 __all__ = ["ToolDefinition", "ToolExecutionMode", "ToolRegistry"]

@@ -28,6 +28,7 @@ from mananze_os.request_lifecycle import RequestLifecycle, RequestState
 from mananze_os.processing_mode_decision import ProcessingModeDecider
 from mananze_os.permission import CapabilityPermission
 from mananze_os.policy_decision import PolicyDecision
+from mananze_os.provider_router import ProviderRouter, ProviderRoutingResult
 from mananze_os.policy_engine import PolicyEngine
 from mananze_os.quality_controller import QualityAssessment, QualityControllerIntelligence
 from mananze_os.task_scheduler import ScheduledTask, TaskScheduler
@@ -40,6 +41,60 @@ from mananze_os.workforce_planner import (
 from mananze_os.work_order import WorkOrder
 from mananze_os.workforce_fabric import WorkforceFabric
 from mananze_os.workforce_role import WorkforceRole
+
+
+@dataclass(frozen=True)
+class ExecutionRequest:
+    """Request passed from governed runtime execution into provider routing."""
+
+    tenant_id: str
+    execution_id: str
+    tool_id: str
+    operation: str
+    payload: dict
+    authorization_id: str
+    approval_id: str | None = None
+
+    def __post_init__(self) -> None:
+        fields = {
+            "tenant_id": self.tenant_id,
+            "execution_id": self.execution_id,
+            "tool_id": self.tool_id,
+            "operation": self.operation,
+            "authorization_id": self.authorization_id,
+        }
+
+        for name, value in fields.items():
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{name} is required")
+
+        if self.approval_id is not None:
+            if not isinstance(self.approval_id, str) or not self.approval_id.strip():
+                raise ValueError("approval_id cannot be blank")
+
+        if not isinstance(self.payload, dict):
+            raise TypeError("payload must be a dict")
+
+
+class RuntimeExecutionBoundary:
+    """Controlled bridge from MananzeRuntime into ProviderRouter."""
+
+    def __init__(self, router: ProviderRouter) -> None:
+        if not isinstance(router, ProviderRouter):
+            raise TypeError("router must be a ProviderRouter")
+        self.router = router
+
+    def execute(self, request: ExecutionRequest) -> ProviderRoutingResult:
+        if not isinstance(request, ExecutionRequest):
+            raise TypeError("request must be an ExecutionRequest")
+
+        return self.router.route(
+            tool_id=request.tool_id,
+            tenant_id=request.tenant_id,
+            execution_id=request.execution_id,
+            operation=request.operation,
+            payload=request.payload,
+        )
 
 
 @dataclass(frozen=True)
@@ -76,6 +131,7 @@ class MananzeRuntime:
         authorities: tuple[Authority, ...] = (),
         permissions: tuple[CapabilityPermission, ...] = (),
         task_store: SQLiteTaskStore | None = None,
+        provider_router: ProviderRouter | None = None,
     ) -> None:
         self.input_gate = InputGate()
         self.action_gate = ActionGate()
@@ -94,6 +150,12 @@ class MananzeRuntime:
         self.task_store = task_store
         self.execution_verifier = ExecutionVerifier()
         self.task_scheduler = TaskScheduler()
+        self.provider_router = provider_router
+        self.runtime_execution_boundary = (
+            RuntimeExecutionBoundary(provider_router)
+            if provider_router is not None
+            else None
+        )
         self.tenants = tenants
         self.authorities = authorities
         self.permissions = permissions
@@ -517,6 +579,49 @@ class MananzeRuntime:
             "executing",
         )
 
+        provider_result = None
+
+        if self.runtime_execution_boundary is not None:
+            provider_result = self.runtime_execution_boundary.execute(
+                ExecutionRequest(
+                    tenant_id=prepared.work_order.tenant_id,
+                    execution_id=execution_id,
+                    tool_id="mananze:controlled_execution",
+                    operation="controlled_execution",
+                    payload={
+                        "work_order_id": prepared.work_order.work_order_id,
+                        "execution_id": execution_id,
+                        "workforce_role_ids": tuple(
+                            role.role_id
+                            for role in prepared.workforce.roles
+                        ),
+                    },
+                    authorization_id=f"authorization:{execution_id}",
+                    approval_id=approved.approval_id,
+                )
+            )
+
+            if not provider_result.success:
+                raise RuntimeError(
+                    "provider execution failed: "
+                    + (
+                        provider_result.error
+                        or "unknown provider execution failure"
+                    )
+                )
+
+        controlled_execution_details = (
+            "Execution simulation completed without external side effects."
+            if provider_result is None
+            else (
+                "Provider execution completed through the centralized "
+                "ProviderRouter and ProviderExecutionGateway; "
+                f"provider_id={provider_result.provider_id}; "
+                f"cost={provider_result.cost} "
+                f"{provider_result.cost_currency}."
+            )
+        )
+
         evidence = (
             ExecutionEvidence(
                 execution_id=execution_id,
@@ -552,10 +657,7 @@ class MananzeRuntime:
                 execution_id=execution_id,
                 action="controlled_execution",
                 status="completed",
-                details=(
-                    "Execution simulation completed without "
-                    "external side effects."
-                ),
+                details=controlled_execution_details,
             ),
         )
 
@@ -711,6 +813,8 @@ class MananzeRuntime:
 
 __all__ = [
     "ExecutionEvidence",
+    "ExecutionRequest",
+    "RuntimeExecutionBoundary",
     "RuntimeReport",
     "RuntimeResult",
     "MananzeRuntime",
