@@ -1,4 +1,4 @@
-﻿"""Commercial orchestration boundary for Mananze OS.
+"""Commercial orchestration boundary for Mananze OS.
 
 Coordinates economic calculation, commercial ledger recording, and
 durable commercial persistence. It does not move money or grant authority.
@@ -150,6 +150,175 @@ class CommercialService:
             referral_entry=None,
         )
 
+
+    def aggregate_billing_period(
+        self,
+        *,
+        billing_id: str,
+        tenant_id: str,
+        plan: SubscriptionPlan,
+        billing_period: str,
+        usage_units: int = 0,
+        referral_credit: Decimal = Decimal("0.00"),
+    ) -> CommercialExecution:
+        """Create one durable billing entry for a billing period.
+
+        The final client amount combines:
+        subscription + usage + reconciled provider charges
+        - referral credit.
+
+        Provider charges are already priced by the Economic Governor
+        during provider reconciliation. This method aggregates those
+        durable client charges into the billing period.
+        """
+        if self.store is None:
+            raise ValueError(
+                "SQLiteCommercialStore is required for billing-period aggregation"
+            )
+
+        if not tenant_id.strip():
+            raise ValueError("tenant_id is required")
+
+        if not billing_period.strip():
+            raise ValueError("billing_period is required")
+
+        try:
+            existing = self.store.get_billing_entry(billing_id)
+        except KeyError:
+            existing = None
+
+        if existing is not None:
+            if existing.tenant_id != tenant_id:
+                raise PermissionError(
+                    "billing entry belongs to another tenant"
+                )
+
+            if existing.billing_period != billing_period:
+                raise ValueError(
+                    "existing billing entry belongs to another billing period"
+                )
+
+            if existing.currency != plan.currency:
+                raise ValueError(
+                    "existing billing entry currency does not match plan currency"
+                )
+
+            existing_amount = Decimal(str(existing.amount_due))
+
+            provider_total = Decimal("0.00")
+
+            for charge in self.store.list_provider_charges(
+                tenant_id=tenant_id
+            ):
+                if charge["billing_period"] != billing_period:
+                    continue
+
+                if charge["cost_currency"] != plan.currency:
+                    raise ValueError(
+                        "provider charge currency does not match plan currency"
+                    )
+
+                provider_total += Decimal(str(charge["client_charge"]))
+
+            provider_total = provider_total.quantize(Decimal("0.01"))
+
+            billing = self.economic_governor.create_billing_record(
+                billing_id=billing_id,
+                tenant_id=tenant_id,
+                plan=plan,
+                usage_units=usage_units,
+                referral_credit=referral_credit,
+            )
+
+            billing = billing.__class__(
+                billing_id=billing.billing_id,
+                tenant_id=billing.tenant_id,
+                plan_id=billing.plan_id,
+                subscription_amount=billing.subscription_amount,
+                usage_amount=billing.usage_amount,
+                referral_credit=billing.referral_credit,
+                total_due=existing_amount,
+                currency=billing.currency,
+                status=billing.status,
+            )
+
+            billing_entry = BillingLedgerEntry(
+                billing_id=existing.billing_id,
+                tenant_id=existing.tenant_id,
+                billing_period=existing.billing_period,
+                amount_due=existing_amount,
+                currency=existing.currency,
+                status=existing.status,
+            )
+
+            return CommercialExecution(
+                billing=billing,
+                billing_entry=billing_entry,
+                provider_charge=provider_total,
+                referral=None,
+                referral_entry=None,
+            )
+
+        base_billing = self.economic_governor.create_billing_record(
+            billing_id=billing_id,
+            tenant_id=tenant_id,
+            plan=plan,
+            usage_units=usage_units,
+            referral_credit=referral_credit,
+        )
+
+        provider_total = Decimal("0.00")
+
+        for charge in self.store.list_provider_charges(
+            tenant_id=tenant_id
+        ):
+            if charge["billing_period"] != billing_period:
+                continue
+
+            if charge["cost_currency"] != plan.currency:
+                raise ValueError(
+                    "provider charge currency does not match plan currency"
+                )
+
+            provider_total += Decimal(str(charge["client_charge"]))
+
+        provider_total = provider_total.quantize(Decimal("0.01"))
+
+        final_total = (
+            base_billing.total_due + provider_total
+        ).quantize(Decimal("0.01"))
+
+        billing = base_billing.__class__(
+            billing_id=billing_id,
+            tenant_id=base_billing.tenant_id,
+            plan_id=base_billing.plan_id,
+            subscription_amount=base_billing.subscription_amount,
+            usage_amount=base_billing.usage_amount,
+            referral_credit=base_billing.referral_credit,
+            total_due=final_total,
+            currency=base_billing.currency,
+            status=base_billing.status,
+        )
+
+        billing_entry = BillingLedgerEntry(
+            billing_id=billing_id,
+            tenant_id=tenant_id,
+            billing_period=billing_period,
+            amount_due=final_total,
+            currency=plan.currency,
+            status="pending",
+        )
+
+        self.ledger.add_billing_entry(billing_entry)
+        self.store.add_billing_entry(billing_entry)
+
+        return CommercialExecution(
+            billing=billing,
+            billing_entry=billing_entry,
+            provider_charge=provider_total,
+            referral=None,
+            referral_entry=None,
+        )
     def create_referral(
         self,
         *,

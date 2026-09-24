@@ -1,4 +1,4 @@
-﻿from decimal import Decimal
+from decimal import Decimal
 
 from mananze_os.commercial_service import CommercialService
 from mananze_os.economic_governor import (
@@ -364,3 +364,220 @@ def test_reconcile_provider_usage_is_tenant_scoped(tmp_path):
 
     assert len(store.list_provider_charges(tenant_id="tenant-a")) == 1
     assert len(store.list_provider_charges(tenant_id="tenant-b")) == 1
+from decimal import Decimal
+
+import pytest
+
+from mananze_os.commercial_service import CommercialService
+from mananze_os.economic_governor import PricingPolicy, SubscriptionPlan
+from mananze_os.sqlite_commercial_store import SQLiteCommercialStore
+
+
+def test_aggregate_billing_period_combines_subscription_usage_provider_charge_and_referral_credit(tmp_path):
+    store = SQLiteCommercialStore(tmp_path / "commercial.db")
+    service = CommercialService(store=store)
+
+    plan = SubscriptionPlan(
+        plan_id="level-2",
+        name="Level 2",
+        monthly_price=Decimal("1500.00"),
+        currency="ZAR",
+        minimum_referral_level=2,
+        included_usage_units=100,
+        overage_price_per_unit=Decimal("5.00"),
+    )
+
+    usage_record = type(
+        "UsageRecord",
+        (),
+        {
+            "execution_id": "exec-aggregate-1",
+            "provider_id": "openai",
+            "tool_id": "marketing.generate",
+            "tenant_id": "tenant-1",
+            "success": True,
+            "cost": Decimal("200.00"),
+            "cost_currency": "ZAR",
+            "usage": {"units": 1},
+        },
+    )()
+
+    service.reconcile_provider_usage(
+        usage_record=usage_record,
+        plan=plan,
+        pricing_policy=PricingPolicy(
+            policy_id="markup-75",
+            markup_rate=Decimal("0.75"),
+        ),
+        billing_period="2026-09",
+    )
+
+    result = service.aggregate_billing_period(
+        billing_id="bill-2026-09-tenant-1",
+        tenant_id="tenant-1",
+        plan=plan,
+        billing_period="2026-09",
+        usage_units=110,
+        referral_credit=Decimal("150.00"),
+    )
+
+    assert result.billing.subscription_amount == Decimal("1500.00")
+    assert result.billing.total_due == Decimal("1750.00")
+    assert result.billing_entry.amount_due == Decimal("1750.00")
+    assert result.provider_charge == Decimal("350.00")
+
+    stored = store.get_billing_entry("bill-2026-09-tenant-1")
+    assert stored is not None
+    assert Decimal(str(stored.amount_due)) == Decimal("1750.00")
+
+
+def test_aggregate_billing_period_only_counts_matching_period_and_tenant(tmp_path):
+    store = SQLiteCommercialStore(tmp_path / "commercial.db")
+    service = CommercialService(store=store)
+
+    plan = SubscriptionPlan(
+        plan_id="level-2",
+        name="Level 2",
+        monthly_price=Decimal("1500.00"),
+        currency="ZAR",
+        included_usage_units=0,
+    )
+
+    policy = PricingPolicy(
+        policy_id="markup-75",
+        markup_rate=Decimal("0.75"),
+    )
+
+    def record(execution_id, tenant_id, period):
+        return type(
+            "UsageRecord",
+            (),
+            {
+                "execution_id": execution_id,
+                "provider_id": "provider-a",
+                "tool_id": "tool-a",
+                "tenant_id": tenant_id,
+                "success": True,
+                "cost": Decimal("100.00"),
+                "cost_currency": "ZAR",
+                "usage": {"units": 1},
+            },
+        )()
+
+    service.reconcile_provider_usage(
+        usage_record=record("exec-current", "tenant-1", "2026-09"),
+        plan=plan,
+        pricing_policy=policy,
+        billing_period="2026-09",
+    )
+
+    service.reconcile_provider_usage(
+        usage_record=record("exec-old", "tenant-1", "2026-08"),
+        plan=plan,
+        pricing_policy=policy,
+        billing_period="2026-08",
+    )
+
+    service.reconcile_provider_usage(
+        usage_record=record("exec-other-tenant", "tenant-2", "2026-09"),
+        plan=plan,
+        pricing_policy=policy,
+        billing_period="2026-09",
+    )
+
+    result = service.aggregate_billing_period(
+        billing_id="bill-current",
+        tenant_id="tenant-1",
+        plan=plan,
+        billing_period="2026-09",
+    )
+
+    assert result.provider_charge == Decimal("175.00")
+    assert result.billing.total_due == Decimal("1675.00")
+
+
+def test_aggregate_billing_period_is_idempotent(tmp_path):
+    store = SQLiteCommercialStore(tmp_path / "commercial.db")
+
+    plan = SubscriptionPlan(
+        plan_id="level-2",
+        name="Level 2",
+        monthly_price=Decimal("1500.00"),
+        currency="ZAR",
+        included_usage_units=0,
+    )
+
+    service = CommercialService(store=store)
+
+    usage_record = type(
+        "UsageRecord",
+        (),
+        {
+            "execution_id": "exec-idempotent",
+            "provider_id": "provider-a",
+            "tool_id": "tool-a",
+            "tenant_id": "tenant-1",
+            "success": True,
+            "cost": Decimal("100.00"),
+            "cost_currency": "ZAR",
+            "usage": {"units": 1},
+        },
+    )()
+
+    service.reconcile_provider_usage(
+        usage_record=usage_record,
+        plan=plan,
+        pricing_policy=PricingPolicy(
+            policy_id="markup-50",
+            markup_rate=Decimal("0.50"),
+        ),
+        billing_period="2026-09",
+    )
+
+    first = service.aggregate_billing_period(
+        billing_id="bill-idempotent",
+        tenant_id="tenant-1",
+        plan=plan,
+        billing_period="2026-09",
+    )
+
+    second = service.aggregate_billing_period(
+        billing_id="bill-idempotent",
+        tenant_id="tenant-1",
+        plan=plan,
+        billing_period="2026-09",
+    )
+
+    assert first.billing.total_due == Decimal("1650.00")
+    assert second.billing.total_due == Decimal("1650.00")
+    assert second.provider_charge == Decimal("150.00")
+
+    entries = store.list_billing_entries(tenant_id="tenant-1")
+    assert len(entries) == 1
+
+
+def test_aggregate_billing_period_rejects_existing_billing_from_other_tenant(tmp_path):
+    store = SQLiteCommercialStore(tmp_path / "commercial.db")
+    service = CommercialService(store=store)
+
+    plan = SubscriptionPlan(
+        plan_id="level-2",
+        name="Level 2",
+        monthly_price=Decimal("1500.00"),
+        currency="ZAR",
+    )
+
+    service.aggregate_billing_period(
+        billing_id="protected-billing",
+        tenant_id="tenant-1",
+        plan=plan,
+        billing_period="2026-09",
+    )
+
+    with pytest.raises(PermissionError):
+        service.aggregate_billing_period(
+            billing_id="protected-billing",
+            tenant_id="tenant-2",
+            plan=plan,
+            billing_period="2026-09",
+        )
