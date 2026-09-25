@@ -7,17 +7,17 @@ separation, Intelligence Center UI over sourced events, plus Intelligence Report
 """
 from __future__ import annotations
 
-from mccc.intelligence.pipeline import IntelligencePipeline, PipelineResult
-from mccc.intelligence.repository import IntelligenceRepository
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.pipeline import IntelligencePipeline, PipelineResult
+from mananze_hub.crypto_web3.intelligence.repository import IntelligenceRepository
+from mananze_hub.crypto_web3.intelligence.schema import (
     Confidence,
     EventCategory,
     IntelligenceEvent,
     SourceTier,
     DISCLAIMER,
 )
-from mccc.intelligence.source_service import SourceService, ROBOTS_TOS_STANCE
-from mccc.intelligence.report import ReportEngine, IntelligenceReport, REPORT_DISCLAIMER as REPORT_ENGINE_DISCLAIMER
+from mananze_hub.crypto_web3.intelligence.source_service import SourceService, ROBOTS_TOS_STANCE
+from mananze_hub.crypto_web3.intelligence.report import ReportEngine, IntelligenceReport, REPORT_DISCLAIMER as REPORT_ENGINE_DISCLAIMER
 
 __all__ = [
     "IntelligencePipeline",

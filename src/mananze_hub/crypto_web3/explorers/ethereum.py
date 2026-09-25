@@ -6,14 +6,14 @@ from typing import Any
 
 import requests
 
-from mccc.explorers.base import (
+from mananze_hub.crypto_web3.explorers.base import (
     DATA_UNAVAILABLE,
     ExplorerProvider,
     ExplorerResult,
     ExplorerStatus,
     register_provider,
 )
-from mccc.security import SensitiveCredentialError, reject_sensitive_credential
+from mananze_hub.crypto_web3.security import SensitiveCredentialError, reject_sensitive_credential
 
 
 class EthereumExplorer(ExplorerProvider):
@@ -37,7 +37,7 @@ class EthereumExplorer(ExplorerProvider):
                 summary=str(exc),
                 label="UNAVAILABLE",
             )
-        from mccc.wallets import balance_rows_for_address, validate_public_address
+        from mananze_hub.crypto_web3.wallets import balance_rows_for_address, validate_public_address
 
         try:
             addr = validate_public_address(raw, chain="ethereum")

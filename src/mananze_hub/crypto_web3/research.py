@@ -4,8 +4,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-from mccc.db import connect, utc_now
-from mccc.security import reject_sensitive_credential
+from mananze_hub.crypto_web3.db import connect, utc_now
+from mananze_hub.crypto_web3.security import reject_sensitive_credential
 
 EVENT_TYPES = ("note", "link", "status_change", "milestone", "risk", "other")
 

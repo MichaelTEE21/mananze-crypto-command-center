@@ -7,8 +7,8 @@ from urllib.parse import urlparse
 
 import requests
 
-from mccc.intelligence.adapters.base import BaseAdapter
-from mccc.intelligence.schema import RawDocument, SourceTier, utc_now_iso
+from mananze_hub.crypto_web3.intelligence.adapters.base import BaseAdapter
+from mananze_hub.crypto_web3.intelligence.schema import RawDocument, SourceTier, utc_now_iso
 
 
 def _local(tag: str) -> str:

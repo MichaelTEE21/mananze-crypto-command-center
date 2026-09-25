@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 import requests
 
-from mccc.demo_data import DEMO_PRICES
+from mananze_hub.crypto_web3.demo_data import DEMO_PRICES
 
 COINGECKO_URL = "https://api.coingecko.com/api/v3/coins/markets"
 DEFAULT_IDS = "bitcoin,ethereum,solana,usd-coin,ripple,cardano"

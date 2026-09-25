@@ -5,7 +5,7 @@ import html
 import re
 from typing import Optional
 
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.schema import (
     UNKNOWN,
     RawDocument,
     utc_now_iso,

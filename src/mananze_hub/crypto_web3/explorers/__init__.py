@@ -5,7 +5,7 @@ Never fabricate balances or transactions.
 """
 from __future__ import annotations
 
-from mccc.explorers.base import (
+from mananze_hub.crypto_web3.explorers.base import (
     DATA_UNAVAILABLE,
     ExplorerResult,
     ExplorerStatus,

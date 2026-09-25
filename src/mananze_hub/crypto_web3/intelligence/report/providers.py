@@ -56,7 +56,7 @@ class MCCCReportProvider:
 
     def fetch_wallet(self, address: str, chain: str = "ethereum") -> ProviderResult:
         try:
-            from mccc.wallets import balance_rows_for_address
+            from mananze_hub.crypto_web3.wallets import balance_rows_for_address
 
             rows = balance_rows_for_address(address, chain=chain)
             if not rows:
@@ -107,7 +107,7 @@ class MCCCReportProvider:
 
     def fetch_token(self, token_id_or_symbol: str) -> ProviderResult:
         try:
-            from mccc.market_provider import get_default_provider
+            from mananze_hub.crypto_web3.market_provider import get_default_provider
 
             provider = get_default_provider()
             # Map common symbols to coingecko ids
@@ -148,8 +148,8 @@ class MCCCReportProvider:
 
     def fetch_project(self, name: str) -> ProviderResult:
         try:
-            from mccc.db import list_projects
-            from mccc.search import search_projects
+            from mananze_hub.crypto_web3.db import list_projects
+            from mananze_hub.crypto_web3.search import search_projects
 
             hits = search_projects(name, db_path=self.db_path, limit=10)
             all_p = list_projects(db_path=self.db_path) if not hits else hits
@@ -192,7 +192,7 @@ class MCCCReportProvider:
 
     def fetch_rwa(self, name: str) -> ProviderResult:
         try:
-            from mccc.intelligence.rwa.service import RWAService
+            from mananze_hub.crypto_web3.intelligence.rwa.service import RWAService
 
             svc = RWAService(self.db_path)
             svc.ensure_ready()
@@ -212,7 +212,7 @@ class MCCCReportProvider:
 
     def fetch_intel_events(self, query: str, limit: int = 10) -> ProviderResult:
         try:
-            from mccc.search import search_intelligence
+            from mananze_hub.crypto_web3.search import search_intelligence
 
             hits = search_intelligence(query, db_path=self.db_path, limit=limit)
             return ProviderResult(

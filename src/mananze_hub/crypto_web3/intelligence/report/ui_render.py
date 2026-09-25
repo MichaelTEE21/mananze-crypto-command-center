@@ -5,9 +5,9 @@ from typing import Any, Optional
 
 import streamlit as st
 
-from mccc.intelligence.report.education import journey_steps, mode_copy, render_explainer_markdown
-from mccc.intelligence.report.schema import REPORT_DISCLAIMER, IntelligenceReport
-from mccc.ui import data_mode_chip, empty_state, section_header, status_badge
+from mananze_hub.crypto_web3.intelligence.report.education import journey_steps, mode_copy, render_explainer_markdown
+from mananze_hub.crypto_web3.intelligence.report.schema import REPORT_DISCLAIMER, IntelligenceReport
+from mananze_hub.crypto_web3.ui import data_mode_chip, empty_state, section_header, status_badge
 
 
 def render_journey_strip() -> None:

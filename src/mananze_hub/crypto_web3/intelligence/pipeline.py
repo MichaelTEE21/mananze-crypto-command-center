@@ -15,13 +15,13 @@ from pathlib import Path
 from typing import Any, Optional, Sequence
 from uuid import uuid4
 
-from mccc.intelligence.classification_service import ClassificationService
-from mccc.intelligence.deduplication_service import DeduplicationService
-from mccc.intelligence.extraction_service import ExtractionService
-from mccc.intelligence.ingestion_service import IngestionService
-from mccc.intelligence.normalization_service import NormalizationService
-from mccc.intelligence.repository import IntelligenceRepository, compute_discovery_latency_seconds
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.classification_service import ClassificationService
+from mananze_hub.crypto_web3.intelligence.deduplication_service import DeduplicationService
+from mananze_hub.crypto_web3.intelligence.extraction_service import ExtractionService
+from mananze_hub.crypto_web3.intelligence.ingestion_service import IngestionService
+from mananze_hub.crypto_web3.intelligence.normalization_service import NormalizationService
+from mananze_hub.crypto_web3.intelligence.repository import IntelligenceRepository, compute_discovery_latency_seconds
+from mananze_hub.crypto_web3.intelligence.schema import (
     CandidateProject,
     CandidateProjectStatus,
     EventCategory,
@@ -32,12 +32,12 @@ from mccc.intelligence.schema import (
     UNKNOWN,
     utc_now_iso,
 )
-from mccc.intelligence.scoring_service import ScoringService
-from mccc.intelligence.source_service import SourceService
-from mccc.intelligence.summarization_service import SummarizationService
-from mccc.intelligence.demo_feed import DEMO_NARRATIVES
-from mccc.intelligence.rwa.service import RWAService
-from mccc.intelligence.rwa.classification import RWAClassificationService
+from mananze_hub.crypto_web3.intelligence.scoring_service import ScoringService
+from mananze_hub.crypto_web3.intelligence.source_service import SourceService
+from mananze_hub.crypto_web3.intelligence.summarization_service import SummarizationService
+from mananze_hub.crypto_web3.intelligence.demo_feed import DEMO_NARRATIVES
+from mananze_hub.crypto_web3.intelligence.rwa.service import RWAService
+from mananze_hub.crypto_web3.intelligence.rwa.classification import RWAClassificationService
 
 
 @dataclass

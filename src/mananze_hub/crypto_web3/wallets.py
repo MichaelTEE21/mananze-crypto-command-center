@@ -7,14 +7,14 @@ from typing import Any, Optional
 
 import requests
 
-from mccc.demo_data import DEMO_WALLET_BALANCES
+from mananze_hub.crypto_web3.demo_data import DEMO_WALLET_BALANCES
 
 ETH_ADDRESS_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 FORBIDDEN_MARKERS = ("private key", "seed phrase", "mnemonic", "password", "secret key")
 
 
 def validate_public_address(address: str, chain: str = "ethereum") -> str:
-    from mccc.security import SensitiveCredentialError, reject_sensitive_credential
+    from mananze_hub.crypto_web3.security import SensitiveCredentialError, reject_sensitive_credential
 
     raw = (address or "").strip()
     try:

@@ -5,8 +5,8 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 
-from mccc.db import connect, utc_now
-from mccc.paths import EDUCATION_DIR, ensure_dirs
+from mananze_hub.crypto_web3.db import connect, utc_now
+from mananze_hub.crypto_web3.paths import EDUCATION_DIR, ensure_dirs
 
 CATEGORIES = ("BEGINNER", "INTERMEDIATE", "ADVANCED")
 

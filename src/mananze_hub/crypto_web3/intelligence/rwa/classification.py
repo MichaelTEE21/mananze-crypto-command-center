@@ -5,12 +5,12 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-from mccc.intelligence.rwa.taxonomy import (
+from mananze_hub.crypto_web3.intelligence.rwa.taxonomy import (
     RWACategory,
     RWAEventType,
     is_known_rwa_category,
 )
-from mccc.intelligence.schema import RawDocument
+from mananze_hub.crypto_web3.intelligence.schema import RawDocument
 
 
 # Broad RWA membership signals

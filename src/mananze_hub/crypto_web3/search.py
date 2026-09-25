@@ -4,10 +4,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-from mccc.db import list_airdrops, list_notes, list_projects, list_wallets
-from mccc.exchanges import list_exchanges
-from mccc.paths import EDUCATION_DIR, ensure_dirs
-from mccc.resources import list_resources
+from mananze_hub.crypto_web3.db import list_airdrops, list_notes, list_projects, list_wallets
+from mananze_hub.crypto_web3.exchanges import list_exchanges
+from mananze_hub.crypto_web3.paths import EDUCATION_DIR, ensure_dirs
+from mananze_hub.crypto_web3.resources import list_resources
 
 SEARCH_CATEGORIES = (
     "projects",
@@ -114,7 +114,7 @@ def search_education(q: str, education_dir: Optional[Path] = None, limit: int = 
 
 
 def search_resources(q: str, db_path: Optional[Path] = None, limit: int = 25) -> list[dict[str, Any]]:
-    from mccc.resources import search_resources as _sr
+    from mananze_hub.crypto_web3.resources import search_resources as _sr
 
     return _sr(q, db_path=db_path, limit=limit)
 
@@ -132,7 +132,7 @@ def search_notes(q: str, db_path: Optional[Path] = None, limit: int = 25) -> lis
 def search_rwa(q: str, db_path: Optional[Path] = None, limit: int = 25) -> list[dict[str, Any]]:
     """RWA profiles — DEMO labelled in results when is_demo."""
     try:
-        from mccc.intelligence.rwa.service import RWAService
+        from mananze_hub.crypto_web3.intelligence.rwa.service import RWAService
 
         svc = RWAService(db_path)
         svc.ensure_ready()
@@ -147,7 +147,7 @@ def search_intelligence(q: str, db_path: Optional[Path] = None, limit: int = 25)
     if not needle:
         return []
     try:
-        from mccc.intelligence.repository import IntelligenceRepository
+        from mananze_hub.crypto_web3.intelligence.repository import IntelligenceRepository
 
         repo = IntelligenceRepository(db_path)
         repo.ensure_schema()

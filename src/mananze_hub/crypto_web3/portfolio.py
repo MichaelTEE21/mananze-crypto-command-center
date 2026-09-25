@@ -10,7 +10,7 @@ import io
 from pathlib import Path
 from typing import Any, Optional
 
-from mccc.db import connect, utc_now
+from mananze_hub.crypto_web3.db import connect, utc_now
 
 
 def add_asset(

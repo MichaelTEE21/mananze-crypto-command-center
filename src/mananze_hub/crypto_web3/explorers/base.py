@@ -118,7 +118,7 @@ def _ensure_builtin() -> None:
     global _LOADED
     if _LOADED:
         return
-    from mccc.explorers import bitcoin, ethereum, solana  # noqa: F401
+    from mananze_hub.crypto_web3.explorers import bitcoin, ethereum, solana  # noqa: F401
 
     ethereum.register()
     bitcoin.register()

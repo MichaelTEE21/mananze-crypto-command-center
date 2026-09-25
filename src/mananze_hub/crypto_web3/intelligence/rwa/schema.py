@@ -6,12 +6,12 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Optional
 from uuid import uuid4
 
-from mccc.intelligence.rwa.taxonomy import (
+from mananze_hub.crypto_web3.intelligence.rwa.taxonomy import (
     AssetValueType,
     DisclosureStatus,
     VerificationStatus,
 )
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.schema import (
     NOT_DISCLOSED,
     UNKNOWN,
     utc_now_iso,

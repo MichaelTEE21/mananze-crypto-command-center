@@ -8,8 +8,8 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-from mccc.intelligence.report.schema import EntityType, SUPPORTED_ENTITY_TYPES
-from mccc.security import SensitiveCredentialError, reject_sensitive_credential
+from mananze_hub.crypto_web3.intelligence.report.schema import EntityType, SUPPORTED_ENTITY_TYPES
+from mananze_hub.crypto_web3.security import SensitiveCredentialError, reject_sensitive_credential
 
 ETH_ADDRESS_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 DEMO_ADDRESS_RE = re.compile(r"^0xDEMO[0-9A-Za-z]{0,36}$", re.IGNORECASE)
@@ -178,7 +178,7 @@ def validate_report_query(
     ch = (chain or "ethereum").strip().lower() or "ethereum"
 
     if entity == EntityType.WALLET.value or entity == EntityType.CONTRACT.value:
-        from mccc.wallets import validate_public_address
+        from mananze_hub.crypto_web3.wallets import validate_public_address
 
         try:
             # Solana-style: allow through wallets.validate only for EVM; handle SOL lightly

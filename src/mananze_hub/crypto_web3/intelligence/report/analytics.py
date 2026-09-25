@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from mccc.intelligence.report.schema import (
+from mananze_hub.crypto_web3.intelligence.report.schema import (
     BeginnerBlock,
     ChangeObservation,
     Metric,

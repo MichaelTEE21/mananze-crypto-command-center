@@ -4,8 +4,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from mccc.intelligence.schema import RawDocument
-from mccc.intelligence.source_service import SourceDefinition
+from mananze_hub.crypto_web3.intelligence.schema import RawDocument
+from mananze_hub.crypto_web3.intelligence.source_service import SourceDefinition
 
 
 class BaseAdapter(ABC):

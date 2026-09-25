@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.schema import (
     IntelligenceEvent,
     RelatedSource,
     RawDocument,

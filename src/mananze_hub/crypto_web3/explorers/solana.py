@@ -5,14 +5,14 @@ from typing import Any
 
 import requests
 
-from mccc.explorers.base import (
+from mananze_hub.crypto_web3.explorers.base import (
     DATA_UNAVAILABLE,
     ExplorerProvider,
     ExplorerResult,
     ExplorerStatus,
     register_provider,
 )
-from mccc.security import SensitiveCredentialError, reject_sensitive_credential
+from mananze_hub.crypto_web3.security import SensitiveCredentialError, reject_sensitive_credential
 
 _PUBLIC_RPC = "https://api.mainnet-beta.solana.com"
 

@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
-from mccc.intelligence.adapters.base import BaseAdapter
-from mccc.intelligence.adapters.demo_adapter import DemoAdapter
-from mccc.intelligence.adapters.rss_adapter import RssAdapter
-from mccc.intelligence.schema import RawDocument
-from mccc.intelligence.source_service import SourceDefinition, SourceService
+from mananze_hub.crypto_web3.intelligence.adapters.base import BaseAdapter
+from mananze_hub.crypto_web3.intelligence.adapters.demo_adapter import DemoAdapter
+from mananze_hub.crypto_web3.intelligence.adapters.rss_adapter import RssAdapter
+from mananze_hub.crypto_web3.intelligence.schema import RawDocument
+from mananze_hub.crypto_web3.intelligence.source_service import SourceDefinition, SourceService
 
 
 class IngestionService:

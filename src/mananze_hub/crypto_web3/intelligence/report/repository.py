@@ -6,8 +6,8 @@ import sqlite3
 from pathlib import Path
 from typing import Any, Optional
 
-from mccc.db import connect, utc_now
-from mccc.paths import ensure_dirs
+from mananze_hub.crypto_web3.db import connect, utc_now
+from mananze_hub.crypto_web3.paths import ensure_dirs
 
 
 SCHEMA_SQL = """

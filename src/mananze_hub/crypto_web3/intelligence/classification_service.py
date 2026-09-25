@@ -4,8 +4,8 @@ from __future__ import annotations
 import re
 from typing import Optional
 
-from mccc.intelligence.schema import EventCategory, RawDocument
-from mccc.intelligence.rwa.classification import RWAClassificationService
+from mananze_hub.crypto_web3.intelligence.schema import EventCategory, RawDocument
+from mananze_hub.crypto_web3.intelligence.rwa.classification import RWAClassificationService
 
 
 _RULES: list[tuple[str, list[re.Pattern[str]]]] = [

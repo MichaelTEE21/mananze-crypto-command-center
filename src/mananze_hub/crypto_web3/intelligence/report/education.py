@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mccc.intelligence.report.schema import METRIC_EXPLAINERS
+from mananze_hub.crypto_web3.intelligence.report.schema import METRIC_EXPLAINERS
 
 
 def explain_metric(key: str) -> dict[str, str]:

@@ -11,8 +11,8 @@ from typing import Any, Optional, Protocol, runtime_checkable
 
 import requests
 
-from mccc.demo_data import DEMO_PRICES
-from mccc.market import DEFAULT_IDS, COINGECKO_URL, fetch_prices as _legacy_fetch_prices
+from mananze_hub.crypto_web3.demo_data import DEMO_PRICES
+from mananze_hub.crypto_web3.market import DEFAULT_IDS, COINGECKO_URL, fetch_prices as _legacy_fetch_prices
 
 GLOBAL_URL = "https://api.coingecko.com/api/v3/global"
 

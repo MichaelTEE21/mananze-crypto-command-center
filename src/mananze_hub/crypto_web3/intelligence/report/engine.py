@@ -5,13 +5,13 @@ import hashlib
 import uuid
 from typing import Any, Optional
 
-from mccc.db import utc_now
-from mccc.intelligence.report import analytics as A
-from mccc.intelligence.report import normalize as N
-from mccc.intelligence.report.education import explain_metric
-from mccc.intelligence.report.providers import MCCCReportProvider, ReportDataProvider
-from mccc.intelligence.report.repository import ReportRepository
-from mccc.intelligence.report.schema import (
+from mananze_hub.crypto_web3.db import utc_now
+from mananze_hub.crypto_web3.intelligence.report import analytics as A
+from mananze_hub.crypto_web3.intelligence.report import normalize as N
+from mananze_hub.crypto_web3.intelligence.report.education import explain_metric
+from mananze_hub.crypto_web3.intelligence.report.providers import MCCCReportProvider, ReportDataProvider
+from mananze_hub.crypto_web3.intelligence.report.repository import ReportRepository
+from mananze_hub.crypto_web3.intelligence.report.schema import (
     REPORT_DISCLAIMER,
     DataMode,
     DataQuality,
@@ -19,7 +19,7 @@ from mccc.intelligence.report.schema import (
     IntelligenceReport,
     SourceRef,
 )
-from mccc.intelligence.report.validators import validate_report_query
+from mananze_hub.crypto_web3.intelligence.report.validators import validate_report_query
 
 
 def _qid(entity_type: str, normalized: str, chain: str) -> str:

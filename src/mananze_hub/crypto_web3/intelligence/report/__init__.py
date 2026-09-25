@@ -4,8 +4,8 @@ Architecture: Providers → Normalisation → Analytics → Intelligence → Rep
 """
 from __future__ import annotations
 
-from mccc.intelligence.report.engine import ReportEngine
-from mccc.intelligence.report.schema import (
+from mananze_hub.crypto_web3.intelligence.report.engine import ReportEngine
+from mananze_hub.crypto_web3.intelligence.report.schema import (
     REPORT_DISCLAIMER,
     DataMode,
     DataQuality,
@@ -14,7 +14,7 @@ from mccc.intelligence.report.schema import (
     METRIC_EXPLAINERS,
     SUPPORTED_ENTITY_TYPES,
 )
-from mccc.intelligence.report.validators import ValidatedQuery, validate_report_query
+from mananze_hub.crypto_web3.intelligence.report.validators import ValidatedQuery, validate_report_query
 
 __all__ = [
     "ReportEngine",

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.schema import (
     Confidence,
     EventCategory,
     SourceTier,

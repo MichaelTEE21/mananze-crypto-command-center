@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import uuid4
 
-from mccc.db import connect, utc_now
-from mccc.intelligence.rwa.schema import RWAProfile, TokenizedAssetValue
-from mccc.intelligence.rwa.taxonomy import VerificationStatus
-from mccc.intelligence.schema import UNKNOWN
+from mananze_hub.crypto_web3.db import connect, utc_now
+from mananze_hub.crypto_web3.intelligence.rwa.schema import RWAProfile, TokenizedAssetValue
+from mananze_hub.crypto_web3.intelligence.rwa.taxonomy import VerificationStatus
+from mananze_hub.crypto_web3.intelligence.schema import UNKNOWN
 
 # Asset value older than this is marked stale in reads
 STALE_AFTER_DAYS = 30

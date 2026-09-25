@@ -6,7 +6,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from mccc.db import (
+from mananze_hub.crypto_web3.db import (
     CALENDAR_EVENT_TYPES,
     add_calendar_event,
     ensure_calendar_schema,

@@ -7,20 +7,20 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from mccc.intelligence.rwa.schema import (
+from mananze_hub.crypto_web3.intelligence.rwa.schema import (
     ClaimProvenance,
     RiskDisclosure,
     RWAProfile,
     TokenizedAssetValue,
 )
-from mccc.intelligence.rwa.taxonomy import (
+from mananze_hub.crypto_web3.intelligence.rwa.taxonomy import (
     AssetValueType,
     DisclosureStatus,
     ProvenanceTier,
     RWACategory,
     VerificationStatus,
 )
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.schema import (
     NOT_DISCLOSED,
     UNKNOWN,
     UNCONFIRMED_LABEL,

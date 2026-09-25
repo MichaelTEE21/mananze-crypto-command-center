@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.schema import (
     AirdropSignalStatus,
     NOT_DISCLOSED,
     UNKNOWN,

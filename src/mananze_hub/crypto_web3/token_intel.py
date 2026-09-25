@@ -77,7 +77,7 @@ def build_token_market_snapshot(token_query: str) -> TokenMarketSnapshot:
         "Not financial advice — research only.",
     ]
     try:
-        from mccc.market_provider import get_default_provider
+        from mananze_hub.crypto_web3.market_provider import get_default_provider
 
         provider = get_default_provider()
         rows, source, is_live = provider.get_prices(ids=tid)

@@ -7,12 +7,12 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Optional
 
-from mccc.intelligence.report.validators import (
+from mananze_hub.crypto_web3.intelligence.report.validators import (
     detect_entity_type,
     strip_prefix,
     validate_report_query,
 )
-from mccc.search import search_all
+from mananze_hub.crypto_web3.search import search_all
 
 ENTITY_CHIPS = (
     "Token",
@@ -77,7 +77,7 @@ def detect_search_entity(query: str, hint: Optional[str] = None) -> DetectedEnti
 
     if hint_norm == "airdrop":
         # Airdrop is a search category, not always a report entity — still allow ANALYSE as project
-        from mccc.security import SensitiveCredentialError, reject_sensitive_credential
+        from mananze_hub.crypto_web3.security import SensitiveCredentialError, reject_sensitive_credential
 
         try:
             reject_sensitive_credential(raw, field="search.query")

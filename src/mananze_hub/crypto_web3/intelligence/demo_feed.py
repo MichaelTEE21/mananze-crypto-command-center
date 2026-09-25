@@ -6,7 +6,7 @@ that are unknown stay "Not disclosed" / "Unknown" / "Unconfirmed".
 """
 from __future__ import annotations
 
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.schema import (
     NOT_DISCLOSED,
     UNKNOWN,
     UNCONFIRMED_LABEL,

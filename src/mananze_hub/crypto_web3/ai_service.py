@@ -12,8 +12,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Optional, Protocol, runtime_checkable
 
-from mccc.assistant import match_tips, structure_research_note
-from mccc.db import connect, utc_now
+from mananze_hub.crypto_web3.assistant import match_tips, structure_research_note
+from mananze_hub.crypto_web3.db import connect, utc_now
 
 SECRET_PATTERNS = (
     r"\bseed\s*phrase\b",
@@ -55,7 +55,7 @@ _MARKET_QUERY_RE = re.compile(
 
 
 def contains_secrets(text: str) -> bool:
-    from mccc.security import is_sensitive_credential
+    from mananze_hub.crypto_web3.security import is_sensitive_credential
 
     if is_sensitive_credential(text or ""):
         return True
@@ -77,7 +77,7 @@ def looks_like_market_question(query: str) -> bool:
 def market_context_block() -> str:
     """Pull labelled prices from market_provider — never invent numbers."""
     try:
-        from mccc.market_provider import get_default_provider
+        from mananze_hub.crypto_web3.market_provider import get_default_provider
 
         provider = get_default_provider()
         pmap, source, is_live = provider.price_map()

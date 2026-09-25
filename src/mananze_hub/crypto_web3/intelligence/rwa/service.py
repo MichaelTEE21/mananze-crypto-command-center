@@ -6,22 +6,22 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import uuid4
 
-from mccc.db import add_project
-from mccc.intelligence.rwa.classification import RWAClassificationService
-from mccc.intelligence.rwa.demo_seed import (
+from mananze_hub.crypto_web3.db import add_project
+from mananze_hub.crypto_web3.intelligence.rwa.classification import RWAClassificationService
+from mananze_hub.crypto_web3.intelligence.rwa.demo_seed import (
     DEMO_RWA_NARRATIVES,
     build_demo_profiles,
     build_demo_raw_documents,
 )
-from mccc.intelligence.rwa.repository import RWARepository
-from mccc.intelligence.rwa.schema import RWAProfile
-from mccc.intelligence.rwa.taxonomy import (
+from mananze_hub.crypto_web3.intelligence.rwa.repository import RWARepository
+from mananze_hub.crypto_web3.intelligence.rwa.schema import RWAProfile
+from mananze_hub.crypto_web3.intelligence.rwa.taxonomy import (
     RWA_DISCLAIMER,
     TOP_LEVEL_CATEGORY,
     VerificationStatus,
     all_rwa_categories,
 )
-from mccc.intelligence.schema import UNKNOWN
+from mananze_hub.crypto_web3.intelligence.schema import UNKNOWN
 
 
 @dataclass
@@ -68,7 +68,7 @@ class RWAService:
                 result.errors.append(str(exc))
 
         try:
-            from mccc.intelligence.repository import IntelligenceRepository
+            from mananze_hub.crypto_web3.intelligence.repository import IntelligenceRepository
 
             irepo = IntelligenceRepository(self.db_path)
             irepo.ensure_schema()

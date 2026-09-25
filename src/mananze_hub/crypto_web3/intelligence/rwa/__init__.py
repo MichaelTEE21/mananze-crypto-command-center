@@ -5,16 +5,16 @@ disclosure-based risk framework, and dashboard/search hooks. Not trading/custody
 """
 from __future__ import annotations
 
-from mccc.intelligence.rwa.classification import RWAClassification, RWAClassificationService
-from mccc.intelligence.rwa.repository import RWARepository
-from mccc.intelligence.rwa.schema import (
+from mananze_hub.crypto_web3.intelligence.rwa.classification import RWAClassification, RWAClassificationService
+from mananze_hub.crypto_web3.intelligence.rwa.repository import RWARepository
+from mananze_hub.crypto_web3.intelligence.rwa.schema import (
     ClaimProvenance,
     RiskDisclosure,
     RWAProfile,
     TokenizedAssetValue,
 )
-from mccc.intelligence.rwa.service import RWASeedResult, RWAService
-from mccc.intelligence.rwa.taxonomy import (
+from mananze_hub.crypto_web3.intelligence.rwa.service import RWASeedResult, RWAService
+from mananze_hub.crypto_web3.intelligence.rwa.taxonomy import (
     RWA_DISCLAIMER,
     RWACategory,
     RWAEventType,

@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from mccc.intelligence.report.providers import ProviderResult
+from mananze_hub.crypto_web3.intelligence.report.providers import ProviderResult
 
 
 def utc_iso() -> str:
