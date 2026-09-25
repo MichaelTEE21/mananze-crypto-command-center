@@ -173,6 +173,7 @@ class ProviderExecutionGateway:
             execution_id=execution_id,
             operation=operation,
             payload=payload,
+            timeout_seconds=tool.timeout_seconds,
         )
 
         started = perf_counter()
@@ -253,3 +254,4 @@ class ProviderExecutionGateway:
 
 
 __all__ = ["GatewayResult", "ProviderExecutionGateway"]
+

@@ -1,4 +1,4 @@
-"""Provider execution contracts for the Mananze OS.
+﻿"""Provider execution contracts for the Mananze OS.
 
 Providers are adapters behind the centralized execution boundary.
 They do not grant authority and must not bypass policy, authorization,
@@ -17,6 +17,7 @@ class ProviderRequest:
     execution_id: str
     operation: str
     payload: dict[str, Any]
+    timeout_seconds: float | None = None
 
 
 @dataclass(frozen=True)
