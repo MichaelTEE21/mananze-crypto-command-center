@@ -1,4 +1,4 @@
-"""Mananze Hub capability catalog.
+﻿"""Mananze Hub capability catalog.
 
 The Hub is a declarative capability ecosystem. It describes capabilities
 that may be made available to Mananze OS.
@@ -113,6 +113,10 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
             "marketing:content_creation",
         ),
         os_capability_ids=("marketing",),
+        tool_ids=(
+            "mananze:marketing:campaign_plan",
+            "mananze:marketing:content_draft",
+        ),
     ),
     HubCapability(
         "mananze:sales",
@@ -129,6 +133,10 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
             "sales:follow_up",
         ),
         os_capability_ids=("sales",),
+        tool_ids=(
+            "mananze:sales:lead_qualification",
+            "mananze:sales:follow_up_plan",
+        ),
     ),
     HubCapability(
         "mananze:revenue",
@@ -144,6 +152,9 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
             "revenue:performance_analysis",
         ),
         os_capability_ids=("revenue",),
+        tool_ids=(
+            "mananze:revenue:performance_report",
+        ),
     ),
     HubCapability(
         "mananze:finance",
@@ -191,6 +202,9 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
             "reporting:business_reporting",
         ),
         os_capability_ids=("reporting",),
+        tool_ids=(
+            "mananze:reporting:business_report",
+        ),
     ),
     HubCapability(
         "mananze:customer_service",
@@ -218,6 +232,9 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
             "retention",
             "reporting",
         ),
+        tool_ids=(
+            "mananze:customer_communications:message_draft",
+        ),
     ),
     HubCapability(
         "mananze:logistics",
@@ -241,6 +258,13 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
             "cost_analysis",
             "revenue",
             "reporting",
+        ),
+        tool_ids=(
+            "mananze:logistics:route_plan",
+            "mananze:fleet:fleet_status",
+            "mananze:cost_analysis:cost_review",
+            "mananze:revenue:performance_report",
+            "mananze:reporting:business_report",
         ),
     ),
     HubCapability(
@@ -268,6 +292,10 @@ CAPABILITIES: Final[tuple[HubCapability, ...]] = (
             "reporting:business_reporting",
         ),
         os_capability_ids=("operations", "reporting"),
+        tool_ids=(
+            "mananze:operations:workflow_plan",
+            "mananze:reporting:business_report",
+        ),
     ),
 )
 
