@@ -190,18 +190,24 @@ def build_mananze_workforce(
         DOMAIN_DEFINITIONS,
         start=1,
     ):
+        capability_skill_ids = tuple(
+            skill.skill_id
+            for skill in skills.list_all()
+            if skill.capability_id == capability_id
+        )
+
+        if not capability_skill_ids:
+            raise RuntimeError(
+                f"canonical workforce capability has no registered skills: "
+                f"{capability_id}"
+            )
+
         orchestrator = WorkforceRole(
             role_id=f"orchestrator:{domain_id}",
             name=ORCHESTRATOR_NAMES[index - 1],
             description=f"Domain Orchestrator for {domain_name}.",
             capability_ids=(capability_id,),
-            skill_ids=(
-                next(
-                    skill.skill_id
-                    for skill in skills.list_all()
-                    if skill.capability_id == capability_id
-                ),
-            ),
+            skill_ids=capability_skill_ids,
         )
         validator.validate(orchestrator)
         registry.register(orchestrator)
@@ -220,13 +226,7 @@ def build_mananze_workforce(
                     f"{domain_name}."
                 ),
                 capability_ids=(capability_id,),
-                skill_ids=(
-                    next(
-                        skill.skill_id
-                        for skill in skills.list_all()
-                        if skill.capability_id == capability_id
-                    ),
-                ),
+                skill_ids=capability_skill_ids,
             )
             validator.validate(specialist)
             registry.register(specialist)
