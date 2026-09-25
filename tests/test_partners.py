@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from mccc.partners import (
+from mananze_hub.crypto_web3.partners import (
     AFFILIATE_DISCLOSURE,
     CATEGORIES,
     REFERRAL_LEAVE_DISCLOSURE,

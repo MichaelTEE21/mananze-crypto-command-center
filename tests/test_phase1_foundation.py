@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from mccc.calendar_service import (
+from mananze_hub.crypto_web3.calendar_service import (
     CALENDAR_EVENT_TYPES,
     ensure_ready,
     intelligence_hook,
@@ -13,16 +13,16 @@ from mccc.calendar_service import (
     month_grid,
     parse_year_month,
 )
-from mccc.db import add_calendar_event, init_db, list_calendar_events
-from mccc.token_intel import DATA_UNAVAILABLE, build_token_market_snapshot, format_money
-from mccc.universal_search import (
+from mananze_hub.crypto_web3.db import add_calendar_event, init_db, list_calendar_events
+from mananze_hub.crypto_web3.token_intel import DATA_UNAVAILABLE, build_token_market_snapshot, format_money
+from mananze_hub.crypto_web3.universal_search import (
     analyse_session_payload,
     chip_for_entity,
     detect_search_entity,
     homepage_search_placeholder,
     unified_search_results,
 )
-from mccc.wallets import validate_public_address
+from mananze_hub.crypto_web3.wallets import validate_public_address
 
 
 @pytest.fixture()

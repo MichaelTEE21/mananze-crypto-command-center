@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from mccc.bookmarks import favourite_refs, is_favourite, set_favourite, toggle_favourite
-from mccc.db import (
+from mananze_hub.crypto_web3.bookmarks import favourite_refs, is_favourite, set_favourite, toggle_favourite
+from mananze_hub.crypto_web3.db import (
     AIRDROP_STATUSES,
     PROJECT_STAGES,
     add_airdrop,
@@ -16,7 +16,7 @@ from mccc.db import (
     normalize_project_stage,
     update_project,
 )
-from mccc.exchanges import (
+from mananze_hub.crypto_web3.exchanges import (
     add_exchange,
     delete_exchange,
     list_exchanges,
@@ -24,14 +24,14 @@ from mccc.exchanges import (
     seed_demo_exchanges,
     update_exchange,
 )
-from mccc.research import (
+from mananze_hub.crypto_web3.research import (
     add_research_event,
     delete_research_event,
     list_project_tags,
     list_research_events,
     set_project_tags,
 )
-from mccc.security import SensitiveCredentialError, reject_sensitive_credential
+from mananze_hub.crypto_web3.security import SensitiveCredentialError, reject_sensitive_credential
 
 
 TWELVE = " ".join(

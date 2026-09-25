@@ -1,7 +1,7 @@
 """Notifications CRUD tests."""
 from __future__ import annotations
 
-from mccc.notifications import (
+from mananze_hub.crypto_web3.notifications import (
     create,
     dismiss,
     list_notifications,

@@ -1,7 +1,7 @@
 """Pure UI helper + announcements list tests (no Streamlit render)."""
 from __future__ import annotations
 
-from mccc.announcements import create, list_published
+from mananze_hub.crypto_web3.announcements import create, list_published
 from mccc.ui import data_mode_chip_html, status_badge_html
 from mccc import __version__
 

@@ -1,7 +1,7 @@
 """Portfolio CRUD + valuation + CSV helpers."""
 from __future__ import annotations
 
-from mccc.portfolio import (
+from mananze_hub.crypto_web3.portfolio import (
     add_asset,
     compute_summary,
     delete_asset,

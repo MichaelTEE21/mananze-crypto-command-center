@@ -20,7 +20,7 @@ from mccc.auth import (
     verify_password,
 )
 from mccc.config import config_status_public, validate_config
-from mccc.db import add_airdrop, add_project, add_wallet, connect, get_setting, set_setting
+from mananze_hub.crypto_web3.db import add_airdrop, add_project, add_wallet, connect, get_setting, set_setting
 from mccc.subscriptions import (
     PRO_PAYMENTS_MESSAGE,
     check_limit,
@@ -146,7 +146,7 @@ def test_pro_unlock_unlimited(db_path, monkeypatch):
 def test_has_pro_feature_flag_or_tier(db_path, monkeypatch):
     monkeypatch.delenv("MCCC_PRO_UNLOCK", raising=False)
     set_tier("free", db_path=db_path)
-    from mccc.db import set_feature_flag
+    from mananze_hub.crypto_web3.db import set_feature_flag
 
     set_feature_flag("pro_advanced_analytics", False, db_path=db_path)
     assert has_pro_feature("pro_advanced_analytics", db_path=db_path) is False

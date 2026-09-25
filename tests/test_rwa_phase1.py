@@ -3,18 +3,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from mccc.db import init_db, list_projects
-from mccc.intelligence.pipeline import IntelligencePipeline
-from mccc.intelligence.repository import IntelligenceRepository
-from mccc.intelligence.rwa.classification import RWAClassificationService
-from mccc.intelligence.rwa.repository import RWARepository, mark_stale
-from mccc.intelligence.rwa.schema import (
+from mananze_hub.crypto_web3.db import init_db, list_projects
+from mananze_hub.crypto_web3.intelligence.pipeline import IntelligencePipeline
+from mananze_hub.crypto_web3.intelligence.repository import IntelligenceRepository
+from mananze_hub.crypto_web3.intelligence.rwa.classification import RWAClassificationService
+from mananze_hub.crypto_web3.intelligence.rwa.repository import RWARepository, mark_stale
+from mananze_hub.crypto_web3.intelligence.rwa.schema import (
     ClaimProvenance,
     RWAProfile,
     TokenizedAssetValue,
 )
-from mccc.intelligence.rwa.service import RWAService
-from mccc.intelligence.rwa.taxonomy import (
+from mananze_hub.crypto_web3.intelligence.rwa.service import RWAService
+from mananze_hub.crypto_web3.intelligence.rwa.taxonomy import (
     AssetValueType,
     DisclosureStatus,
     RWACategory,
@@ -26,14 +26,14 @@ from mccc.intelligence.rwa.taxonomy import (
     register_event_type,
     is_known_rwa_category,
 )
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.schema import (
     EventCategory,
     NOT_DISCLOSED,
     UNKNOWN,
     RawDocument,
 )
-from mccc.intelligence.classification_service import ClassificationService
-from mccc.search import search_all, search_rwa
+from mananze_hub.crypto_web3.intelligence.classification_service import ClassificationService
+from mananze_hub.crypto_web3.search import search_all, search_rwa
 
 
 def test_rwa_category_enum_and_extension():

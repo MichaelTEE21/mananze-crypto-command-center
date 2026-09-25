@@ -1,10 +1,10 @@
 """Light tests for education, subscriptions, airdrop_tasks, ai_service."""
 from __future__ import annotations
 
-from mccc.airdrop_tasks import add_task, list_tasks, toggle_done
-from mccc.ai_service import answer, contains_secrets
-from mccc.db import add_airdrop
-from mccc.education import completed_keys, get_progress, upsert_progress
+from mananze_hub.crypto_web3.airdrop_tasks import add_task, list_tasks, toggle_done
+from mananze_hub.crypto_web3.ai_service import answer, contains_secrets
+from mananze_hub.crypto_web3.db import add_airdrop
+from mananze_hub.crypto_web3.education import completed_keys, get_progress, upsert_progress
 from mccc.subscriptions import get_or_create_free, is_pro, set_tier
 
 

@@ -1,9 +1,9 @@
 """Scoring, source tier confidence, dedupe clustering."""
 from __future__ import annotations
 
-from mccc.intelligence.deduplication_service import DeduplicationService
-from mccc.intelligence.schema import RawDocument, SourceTier
-from mccc.intelligence.scoring_service import ScoringService
+from mananze_hub.crypto_web3.intelligence.deduplication_service import DeduplicationService
+from mananze_hub.crypto_web3.intelligence.schema import RawDocument, SourceTier
+from mananze_hub.crypto_web3.intelligence.scoring_service import ScoringService
 
 
 def test_scoring_demo_never_verified():

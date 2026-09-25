@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from mccc.announcements import create, expire, list_all, list_published, publish, update
-from mccc.ai_service import (
+from mananze_hub.crypto_web3.announcements import create, expire, list_all, list_published, publish, update
+from mananze_hub.crypto_web3.ai_service import (
     AssistantProvider,
     OpenAICompatibleProvider,
     RuleBasedProvider,
@@ -14,9 +14,9 @@ from mccc.ai_service import (
     get_assistant_provider,
     looks_like_market_question,
 )
-from mccc.bookmarks import delete_bookmark, list_bookmarks, set_favourite
-from mccc.db import add_note, add_project, utc_now
-from mccc.education import (
+from mananze_hub.crypto_web3.bookmarks import delete_bookmark, list_bookmarks, set_favourite
+from mananze_hub.crypto_web3.db import add_note, add_project, utc_now
+from mananze_hub.crypto_web3.education import (
     CATEGORIES,
     category_of,
     infer_category_from_name,
@@ -25,7 +25,7 @@ from mccc.education import (
     parse_frontmatter,
     score_quiz,
 )
-from mccc.resources import (
+from mananze_hub.crypto_web3.resources import (
     add_resource,
     delete_resource,
     list_resources,
@@ -33,7 +33,7 @@ from mccc.resources import (
     search_resources,
     update_resource,
 )
-from mccc.search import match_query, search_all, search_education, search_projects
+from mananze_hub.crypto_web3.search import match_query, search_all, search_education, search_projects
 
 
 def test_education_categories_and_frontmatter(tmp_path):
@@ -147,7 +147,7 @@ def test_notes_project_filter_data(db_path):
     pid = add_project("NoteLink", "solana", db_path=db_path)
     add_note("Linked", "body", "tag", project_id=pid, db_path=db_path)
     add_note("Orphan", "body2", "", project_id=None, db_path=db_path)
-    from mccc.db import list_notes
+    from mananze_hub.crypto_web3.db import list_notes
 
     notes = list_notes(db_path=db_path)
     assert any(n.get("project_id") == pid for n in notes)

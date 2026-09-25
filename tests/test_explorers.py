@@ -1,7 +1,7 @@
 """Explorer registry + UNAVAILABLE honesty + security rejection."""
 from __future__ import annotations
 
-from mccc.explorers import (
+from mananze_hub.crypto_web3.explorers import (
     DATA_UNAVAILABLE,
     available_chains,
     get_provider,
@@ -9,7 +9,7 @@ from mccc.explorers import (
     lookup_address,
     lookup_tx,
 )
-from mccc.explorers.base import ExplorerStatus
+from mananze_hub.crypto_web3.explorers.base import ExplorerStatus
 
 
 def test_builtin_providers_registered():

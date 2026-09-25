@@ -4,8 +4,8 @@ from __future__ import annotations
 import pytest
 
 from mccc.auth import hash_password, register_user
-from mccc.db import add_wallet, init_db, list_settings, set_setting, get_setting
-from mccc.security import (
+from mananze_hub.crypto_web3.db import add_wallet, init_db, list_settings, set_setting, get_setting
+from mananze_hub.crypto_web3.security import (
     SensitiveCredentialError,
     contains_credential_markers,
     is_sensitive_credential,
@@ -13,7 +13,7 @@ from mccc.security import (
     looks_like_mnemonic,
     reject_sensitive_credential,
 )
-from mccc.wallets import validate_public_address
+from mananze_hub.crypto_web3.wallets import validate_public_address
 
 
 TWELVE = " ".join(
@@ -121,7 +121,7 @@ def test_register_rejects_secret_in_display_name(db_path):
 
 
 def test_schema_v2_tables_exist(db_path):
-    from mccc.db import connect
+    from mananze_hub.crypto_web3.db import connect
 
     needed = {
         "exchanges",
@@ -159,7 +159,7 @@ def test_init_idempotent_keeps_v2(db_path):
 
 def test_services_facade_imports():
     from mccc.services import market, ai
-    from mccc.market_provider import get_default_provider as legacy
+    from mananze_hub.crypto_web3.market_provider import get_default_provider as legacy
     from mccc.services.market import get_default_provider as via_service
 
     assert legacy is via_service or callable(via_service)

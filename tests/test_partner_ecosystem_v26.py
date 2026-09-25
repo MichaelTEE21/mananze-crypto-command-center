@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from mccc import __version__
-from mccc.partners import (
+from mananze_hub.crypto_web3.partners import (
     CATEGORIES,
     REFERRAL_LEAVE_DISCLOSURE,
     add_partner_link,
@@ -14,7 +14,7 @@ from mccc.partners import (
     record_click,
     resolve_outbound,
 )
-from mccc.security import is_sensitive_credential, reject_sensitive_credential, SensitiveCredentialError
+from mananze_hub.crypto_web3.security import is_sensitive_credential, reject_sensitive_credential, SensitiveCredentialError
 import pytest
 
 
@@ -78,7 +78,7 @@ def test_routing_fallback_and_active_gate(db_path):
     d = get_outbound_url(lid, db_path=db_path, require_active=True)
     assert d["url"] == "https://example.com/dex-ref"
     # disable → official only
-    from mccc.partners import set_partner_status
+    from mananze_hub.crypto_web3.partners import set_partner_status
 
     set_partner_status(lid, "Disabled", db_path=db_path)
     d2 = get_outbound_url(lid, db_path=db_path, require_active=True)

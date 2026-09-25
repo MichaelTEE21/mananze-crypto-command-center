@@ -1,8 +1,8 @@
 """Schema / enum / latency / event provenance tests."""
 from __future__ import annotations
 
-from mccc.intelligence.repository import compute_discovery_latency_seconds
-from mccc.intelligence.schema import (
+from mananze_hub.crypto_web3.intelligence.repository import compute_discovery_latency_seconds
+from mananze_hub.crypto_web3.intelligence.schema import (
     Confidence,
     EventCategory,
     ImportanceBand,

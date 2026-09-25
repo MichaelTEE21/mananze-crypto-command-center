@@ -5,26 +5,26 @@ from pathlib import Path
 
 import pytest
 
-from mccc.intelligence.report.analytics import (
+from mananze_hub.crypto_web3.intelligence.report.analytics import (
     analyze_token,
     analyze_wallet,
     concentration,
     detect_activity_change,
     summarize_transactions,
 )
-from mccc.intelligence.report.education import explain_metric, journey_steps, render_explainer_markdown
-from mccc.intelligence.report.engine import ReportEngine
-from mccc.intelligence.report.normalize import normalize_token, normalize_wallet
-from mccc.intelligence.report.providers import FailingProvider, ProviderResult, StaticDemoProvider
-from mccc.intelligence.report.schema import (
+from mananze_hub.crypto_web3.intelligence.report.education import explain_metric, journey_steps, render_explainer_markdown
+from mananze_hub.crypto_web3.intelligence.report.engine import ReportEngine
+from mananze_hub.crypto_web3.intelligence.report.normalize import normalize_token, normalize_wallet
+from mananze_hub.crypto_web3.intelligence.report.providers import FailingProvider, ProviderResult, StaticDemoProvider
+from mananze_hub.crypto_web3.intelligence.report.schema import (
     REPORT_DISCLAIMER,
     DataMode,
     EntityType,
     IntelligenceReport,
     SUPPORTED_ENTITY_TYPES,
 )
-from mccc.intelligence.report.validators import detect_entity_type, validate_report_query
-from mccc.security import SensitiveCredentialError
+from mananze_hub.crypto_web3.intelligence.report.validators import detect_entity_type, validate_report_query
+from mananze_hub.crypto_web3.security import SensitiveCredentialError
 
 
 @pytest.fixture()
@@ -214,8 +214,8 @@ def test_report_context_for_assistant(tmp_db: Path):
 
 
 def test_ai_answer_report_grounding(tmp_db: Path):
-    from mccc.ai_service import answer
-    from mccc.db import init_db
+    from mananze_hub.crypto_web3.ai_service import answer
+    from mananze_hub.crypto_web3.db import init_db
 
     init_db(tmp_db)
     engine = ReportEngine(provider=StaticDemoProvider(), db_path=tmp_db)
@@ -232,8 +232,8 @@ def test_ai_answer_report_grounding(tmp_db: Path):
 
 
 def test_ai_refuses_secret_in_report_context(tmp_db: Path):
-    from mccc.ai_service import answer
-    from mccc.db import init_db
+    from mananze_hub.crypto_web3.ai_service import answer
+    from mananze_hub.crypto_web3.db import init_db
 
     init_db(tmp_db)
     res = answer(

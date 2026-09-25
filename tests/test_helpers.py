@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import pytest
 
-from mccc.assistant import match_tips, structure_research_note
-from mccc.demo_data import DEMO_BANNER, portfolio_summary
-from mccc.market import fetch_prices
-from mccc.wallets import balance_rows_for_address, validate_public_address
+from mananze_hub.crypto_web3.assistant import match_tips, structure_research_note
+from mananze_hub.crypto_web3.demo_data import DEMO_BANNER, portfolio_summary
+from mananze_hub.crypto_web3.market import fetch_prices
+from mananze_hub.crypto_web3.wallets import balance_rows_for_address, validate_public_address
 
 
 def test_portfolio_summary_demo():

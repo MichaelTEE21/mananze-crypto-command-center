@@ -1,7 +1,7 @@
 """Market provider shape + DEMO labelling."""
 from __future__ import annotations
 
-from mccc.market_provider import CoinGeckoProvider, clear_market_cache
+from mananze_hub.crypto_web3.market_provider import CoinGeckoProvider, clear_market_cache
 
 
 def test_price_map_shape():

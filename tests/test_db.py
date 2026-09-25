@@ -1,7 +1,7 @@
 """Core DB helper tests."""
 from __future__ import annotations
 
-from mccc.db import (
+from mananze_hub.crypto_web3.db import (
     add_airdrop,
     add_note,
     add_project,

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from mccc.watchlist import (
+from mananze_hub.crypto_web3.watchlist import (
     add_alert,
     add_item,
     delete_alert,

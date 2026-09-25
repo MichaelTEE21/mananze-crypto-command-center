@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from mccc.db import init_db
-from mccc.intelligence.pipeline import IntelligencePipeline
-from mccc.intelligence.repository import IntelligenceRepository
-from mccc.intelligence.summarization_service import SummarizationService
+from mananze_hub.crypto_web3.db import init_db
+from mananze_hub.crypto_web3.intelligence.pipeline import IntelligencePipeline
+from mananze_hub.crypto_web3.intelligence.repository import IntelligenceRepository
+from mananze_hub.crypto_web3.intelligence.summarization_service import SummarizationService
 
 
 def test_pipeline_demo_seed_and_schema(tmp_path: Path):

@@ -1,10 +1,10 @@
 """Classification + normalize filter behaviour."""
 from __future__ import annotations
 
-from mccc.intelligence.classification_service import ClassificationService
-from mccc.intelligence.normalization_service import NormalizationService
-from mccc.intelligence.schema import EventCategory, RawDocument
-from mccc.intelligence.source_service import SourceService, SourceTier
+from mananze_hub.crypto_web3.intelligence.classification_service import ClassificationService
+from mananze_hub.crypto_web3.intelligence.normalization_service import NormalizationService
+from mananze_hub.crypto_web3.intelligence.schema import EventCategory, RawDocument
+from mananze_hub.crypto_web3.intelligence.source_service import SourceService, SourceTier
 
 
 def test_classify_funding_and_airdrop():
