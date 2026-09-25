@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 
 sys.path.insert(0, "src")
 
@@ -387,16 +387,36 @@ def test_mananze_runtime_end_to_end():
     assert completed.approval.status == "approved"
     assert completed.report is not None
     assert completed.report.status == "completed"
-    assert len(completed.report.evidence) == 4
-    assert completed.report.evidence[0].action == "policy_decision"
-    assert completed.report.evidence[0].status == "approval_required"
-    assert completed.report.evidence[1].action == "authorization_decision"
-    assert completed.report.evidence[1].status == "allowed"
-    assert completed.report.evidence[2].action == "workforce_assignment"
-    assert completed.report.evidence[2].status == "validated"
-    assert "assignment_count=10" in completed.report.evidence[2].details
-    assert completed.report.evidence[3].action == "controlled_execution"
-    assert completed.report.evidence[3].status == "completed"
+    assert len(completed.report.evidence) == 14
+
+    node_evidence = tuple(
+        item
+        for item in completed.report.evidence
+        if item.action == "node_execution"
+    )
+
+    assert len(node_evidence) == 10
+    assert all(
+        item.status in {"completed", "simulated"}
+        for item in node_evidence
+    )
+
+    governance_evidence = tuple(
+        item
+        for item in completed.report.evidence
+        if item.action != "node_execution"
+    )
+
+    assert len(governance_evidence) == 4
+    assert governance_evidence[0].action == "policy_decision"
+    assert governance_evidence[0].status == "approval_required"
+    assert governance_evidence[1].action == "authorization_decision"
+    assert governance_evidence[1].status == "allowed"
+    assert governance_evidence[2].action == "workforce_assignment"
+    assert governance_evidence[2].status == "validated"
+    assert "assignment_count=10" in governance_evidence[2].details
+    assert governance_evidence[3].action == "controlled_execution"
+    assert governance_evidence[3].status == "completed"
 
 
 
@@ -698,3 +718,5 @@ def test_runtime_preserves_non_blocking_processing_mode():
     assert prepared.work_order.work_order_id == "WO-PROCESSING-BACKGROUND"
     assert task.processing_mode == "background"
     assert task.request_blocking is False
+
+

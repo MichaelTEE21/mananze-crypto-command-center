@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 
 from mananze_os.execution_graph import ExecutionNode
 from mananze_os.workforce_assignment import WorkforceAssignment
@@ -362,3 +362,71 @@ def test_fabric_allows_same_node_id_across_executions() -> None:
 
     assert assignment_one.node_id == assignment_two.node_id
     assert assignment_one.execution_id != assignment_two.execution_id
+
+def test_fabric_retrieves_execution_node_for_assignment() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role())
+
+    node = ExecutionNode(
+        node_id="node-execution",
+        capability_id="execution",
+        skill_ids=("execution:coordination",),
+        tool_id="mananze:controlled_execution",
+    )
+
+    assignment = fabric.assign_role(
+        assignment_id="assignment-execution",
+        execution_id="execution-1",
+        node=node,
+        role_id="role-1",
+    )
+
+    assert fabric.get_node(assignment.assignment_id) == node
+
+
+def test_fabric_lists_execution_nodes_for_execution() -> None:
+    fabric = WorkforceFabric()
+    fabric.register_role(make_role("role-1"))
+    fabric.register_role(make_role("role-2"))
+
+    node_one = ExecutionNode(
+        node_id="node-1",
+        capability_id="execution",
+        skill_ids=("execution:coordination",),
+        tool_id="mananze:controlled_execution",
+    )
+    node_two = ExecutionNode(
+        node_id="node-2",
+        capability_id="execution",
+        skill_ids=("execution:coordination",),
+        tool_id="mananze:controlled_execution",
+    )
+
+    fabric.assign_role(
+        assignment_id="assignment-1",
+        execution_id="execution-1",
+        node=node_one,
+        role_id="role-1",
+    )
+    fabric.assign_role(
+        assignment_id="assignment-2",
+        execution_id="execution-1",
+        node=node_two,
+        role_id="role-2",
+    )
+
+    assert fabric.list_nodes_for_execution("execution-1") == (
+        node_one,
+        node_two,
+    )
+
+
+def test_fabric_rejects_unknown_assignment_node_lookup() -> None:
+    fabric = WorkforceFabric()
+
+    with pytest.raises(
+        KeyError,
+        match="unknown workforce assignment node: missing-assignment",
+    ):
+        fabric.get_node("missing-assignment")
+

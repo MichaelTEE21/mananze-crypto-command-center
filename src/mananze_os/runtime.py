@@ -1,4 +1,4 @@
-"""Mananze OS controlled runtime foundation."""
+﻿"""Mananze OS controlled runtime foundation."""
 
 from dataclasses import dataclass
 from uuid import uuid4
@@ -14,7 +14,7 @@ from mananze_os.authorization import (
 from mananze_os.compiler import CompiledPlan, IntelligenceCompiler
 from mananze_os.domain_qa import DomainQA, QAVerdict
 from mananze_os.execution_evidence import ExecutionEvidence
-from mananze_os.execution_graph import ExecutionNode
+from mananze_os.execution_graph import ExecutionGraph, ExecutionNode
 from mananze_os.execution_context_integrity import ExecutionContextIntegrity
 from mananze_os.execution_lifecycle import ExecutionLifecycle
 from mananze_os.execution_state import ExecutionState
@@ -617,50 +617,122 @@ class MananzeRuntime:
             "executing",
         )
 
-        provider_result = None
+        nodes_by_id = {
+            assignment.node_id: self.workforce_fabric.get_node(
+                assignment.assignment_id
+            )
+            for assignment in assignments
+        }
 
-        if self.runtime_execution_boundary is not None:
+        execution_graph = ExecutionGraph(
+            graph_id=f"graph:{execution_id}",
+            nodes=tuple(nodes_by_id.values()),
+        )
+
+        assignment_by_node_id = {
+            assignment.node_id: assignment
+            for assignment in assignments
+        }
+
+        provider_results: list[ProviderRoutingResult] = []
+        execution_evidence: list[ExecutionEvidence] = []
+
+        for node_id in execution_graph.execution_order():
+            node = nodes_by_id[node_id]
+            assignment = assignment_by_node_id[node_id]
+
+            if node.tool_id is None:
+                execution_evidence.append(
+                    ExecutionEvidence(
+                        execution_id=execution_id,
+                        action="node_execution",
+                        status="completed",
+                        details=(
+                            f"assignment_id={assignment.assignment_id}; "
+                            f"node_id={node.node_id}; "
+                            f"role_id={assignment.role_id}; "
+                            f"capability_id={node.capability_id}; "
+                            "execution_mode=internal"
+                        ),
+                    )
+                )
+                continue
+
+            if self.runtime_execution_boundary is None:
+                execution_evidence.append(
+                    ExecutionEvidence(
+                        execution_id=execution_id,
+                        action="node_execution",
+                        status="simulated",
+                        details=(
+                            f"assignment_id={assignment.assignment_id}; "
+                            f"node_id={node.node_id}; "
+                            f"role_id={assignment.role_id}; "
+                            f"tool_id={node.tool_id}; "
+                            "execution_mode=simulation"
+                        ),
+                    )
+                )
+                continue
+
             provider_result = self.runtime_execution_boundary.execute(
                 ExecutionRequest(
                     tenant_id=prepared.work_order.tenant_id,
                     execution_id=execution_id,
-                    tool_id="mananze:controlled_execution",
-                    operation="controlled_execution",
+                    tool_id=node.tool_id,
+                    operation=node.tool_id,
                     payload={
                         "work_order_id": prepared.work_order.work_order_id,
                         "execution_id": execution_id,
-                        "workforce_role_ids": tuple(
-                            role.role_id
-                            for role in prepared.workforce.roles
-                        ),
+                        "assignment_id": assignment.assignment_id,
+                        "node_id": node.node_id,
+                        "role_id": assignment.role_id,
+                        "capability_id": node.capability_id,
+                        "skill_ids": node.skill_ids,
                     },
                     authorization_id=f"authorization:{execution_id}",
                     approval_id=approved.approval_id,
                 )
             )
 
+            provider_results.append(provider_result)
+
             if not provider_result.success:
                 raise RuntimeError(
-                    "provider execution failed: "
+                    "provider execution failed for "
+                    f"tool={node.tool_id}: "
                     + (
                         provider_result.error
                         or "unknown provider execution failure"
                     )
                 )
 
-        controlled_execution_details = (
-            "Execution simulation completed without external side effects."
-            if provider_result is None
-            else (
-                "Provider execution completed through the centralized "
-                "ProviderRouter and ProviderExecutionGateway; "
-                f"provider_id={provider_result.provider_id}; "
-                f"cost={provider_result.cost} "
-                f"{provider_result.cost_currency}."
+            execution_evidence.append(
+                ExecutionEvidence(
+                    execution_id=execution_id,
+                    action="node_execution",
+                    status="completed",
+                    details=(
+                        f"assignment_id={assignment.assignment_id}; "
+                        f"node_id={node.node_id}; "
+                        f"role_id={assignment.role_id}; "
+                        f"capability_id={node.capability_id}; "
+                        f"skill_ids={','.join(node.skill_ids)}; "
+                        f"tool_id={node.tool_id}; "
+                        f"provider_id={provider_result.provider_id}; "
+                        f"cost={provider_result.cost} "
+                        f"{provider_result.cost_currency}"
+                    ),
+                )
             )
-        )
 
+        controlled_execution_details = (
+            "Execution completed across the governed workforce execution graph; "
+            f"nodes={len(assignments)}; "
+            f"provider_executions={len(provider_results)}."
+        )
         evidence = (
+            *execution_evidence,
             ExecutionEvidence(
                 execution_id=execution_id,
                 action="policy_decision",
@@ -857,3 +929,8 @@ __all__ = [
     "RuntimeResult",
     "MananzeRuntime",
 ]
+
+
+
+
+

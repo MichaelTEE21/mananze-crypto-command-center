@@ -1,4 +1,4 @@
-"""Mananze OS workforce coordination fabric foundation."""
+﻿"""Mananze OS workforce coordination fabric foundation."""
 
 from __future__ import annotations
 
@@ -24,7 +24,9 @@ class WorkforceFabric:
     ) -> None:
         self.registry = registry or WorkforceRegistry()
         self.assignment_planner = WorkforceAssignmentPlanner(self.registry)
+
         self._assignments: dict[str, WorkforceAssignment] = {}
+        self._nodes: dict[str, ExecutionNode] = {}
 
         if (capability_registry is None) != (skill_registry is None):
             raise ValueError(
@@ -48,6 +50,7 @@ class WorkforceFabric:
     def register_role(self, role: WorkforceRole) -> None:
         if self.role_validator is not None:
             self.role_validator.validate(role)
+
         self.registry.register(role)
 
     def get_role(self, role_id: str) -> WorkforceRole:
@@ -82,7 +85,10 @@ class WorkforceFabric:
             node=node,
             role_id=role_id,
         )
+
         self._assignments[assignment.assignment_id] = assignment
+        self._nodes[assignment.assignment_id] = node
+
         return assignment
 
     def get_assignment(self, assignment_id: str) -> WorkforceAssignment:
@@ -93,8 +99,33 @@ class WorkforceFabric:
                 f"unknown workforce assignment: {assignment_id}"
             ) from None
 
+    def get_node(self, assignment_id: str) -> ExecutionNode:
+        """Return the execution node bound to a workforce assignment."""
+
+        try:
+            return self._nodes[assignment_id]
+        except KeyError:
+            raise KeyError(
+                f"unknown workforce assignment node: {assignment_id}"
+            ) from None
+
     def list_assignments(self) -> tuple[WorkforceAssignment, ...]:
         return tuple(self._assignments.values())
+
+    def list_nodes_for_execution(
+        self,
+        execution_id: str,
+    ) -> tuple[ExecutionNode, ...]:
+        """Return execution nodes in workforce-assignment insertion order."""
+
+        if not execution_id.strip():
+            raise ValueError("execution_id is required")
+
+        return tuple(
+            self._nodes[assignment.assignment_id]
+            for assignment in self._assignments.values()
+            if assignment.execution_id == execution_id
+        )
 
     def list_assignments_for_execution(
         self,
