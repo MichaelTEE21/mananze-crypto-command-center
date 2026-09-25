@@ -1,4 +1,4 @@
-"""Business-context capability discovery for Mananze Hub.
+﻿"""Business-context capability discovery for Mananze Hub.
 
 This layer identifies potentially relevant Hub capabilities from structured
 observations. It does not execute, approve, authorize, or route actions.
@@ -106,14 +106,6 @@ _KEYWORDS: dict[str, tuple[str, ...]] = {
         "site",
         "project",
     ),
-    "mananze:crypto_web3": (
-        "crypto",
-        "cryptocurrency",
-        "blockchain",
-        "web3",
-        "token",
-        "wallet",
-    ),
 }
 
 
@@ -166,3 +158,4 @@ def resolve_os_capability_candidates(
                 resolved.append(capability_id)
 
     return tuple(resolved)
+

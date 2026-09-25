@@ -1,4 +1,4 @@
-from mananze_hub.catalog import (
+﻿from mananze_hub.catalog import (
     CAPABILITIES,
     HubCapability,
     get_capability,
@@ -8,8 +8,6 @@ from mananze_hub.catalog import (
 
 def test_catalog_preserves_existing_capability_ids():
     capability_ids = tuple(capability.capability_id for capability in list_capabilities())
-
-    assert "mananze:crypto_web3" in capability_ids
     assert "mananze:marketing" in capability_ids
     assert "mananze:sales" in capability_ids
     assert "mananze:revenue" in capability_ids
@@ -97,3 +95,4 @@ def test_get_capability_returns_manifest():
     assert capability.permissions
     assert capability.evidence_requirements
     assert capability.os_capability_ids
+

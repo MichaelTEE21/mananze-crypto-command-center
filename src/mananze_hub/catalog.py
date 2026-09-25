@@ -94,12 +94,6 @@ class HubCapability:
 
 CAPABILITIES: Final[tuple[HubCapability, ...]] = (
     HubCapability(
-        "mananze:crypto_web3",
-        "Crypto & Web3",
-        "Crypto, blockchain and Web3 research capabilities.",
-        os_capability_ids=(),
-    ),
-    HubCapability(
         "mananze:marketing",
         "Marketing",
         "Marketing analysis, planning and content capabilities.",
