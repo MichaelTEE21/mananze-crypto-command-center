@@ -1,6 +1,0 @@
-"""MANANZE CRYPTO COMMAND CENTER — core package."""
-
-__version__ = "2.6.0"
-APP_NAME = "MANANZE CRYPTO COMMAND CENTER"
-APP_TAGLINE = "DON'T JUST WATCH CRYPTO. UNDERSTAND IT."
-APP_POSITIONING = "Understand Crypto. Read the Chain. Learn as You Go."
