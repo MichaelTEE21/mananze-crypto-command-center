@@ -1,4 +1,4 @@
-﻿"""Mananze OS capability registry foundation."""
+"""Mananze OS capability registry foundation."""
 
 from dataclasses import dataclass
 
@@ -117,6 +117,18 @@ def default_capability_registry() -> CapabilityRegistry:
             name="Reporting",
             description="Produce evidence-based operational and business reports.",
             domains=("business", "intelligence", "reporting"),
+        ),
+        Capability(
+            capability_id="receivables",
+            name="Receivables Management",
+            description="Manage customer balances, repayment schedules, payments, and outstanding receivables.",
+            domains=("business", "finance", "customer", "operations"),
+        ),
+        Capability(
+            capability_id="payment_collection",
+            name="Payment Collection",
+            description="Coordinate authorized payment collection and payment-status workflows.",
+            domains=("business", "finance", "payments", "operations"),
         ),
     )
 

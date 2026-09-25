@@ -13,6 +13,7 @@ class ToolDefinition:
     input_schema: dict[str, Any]
     output_schema: dict[str, Any]
     required_permission_ids: tuple[str, ...] = ()
+    supported_skill_ids: tuple[str, ...] = ()
     risk: RiskLevel = "low"
     supported_tenant_ids: tuple[str, ...] = ()
     allowed_provider_ids: tuple[str, ...] = ()
@@ -49,6 +50,10 @@ class ToolDefinition:
         for permission_id in self.required_permission_ids:
             if not isinstance(permission_id, str) or not permission_id.strip():
                 raise ValueError("required permission IDs must be non-empty")
+
+        for skill_id in self.supported_skill_ids:
+            if not isinstance(skill_id, str) or not skill_id.strip():
+                raise ValueError("supported skill IDs must be non-empty")
 
         for tenant_id in self.supported_tenant_ids:
             if not isinstance(tenant_id, str) or not tenant_id.strip():

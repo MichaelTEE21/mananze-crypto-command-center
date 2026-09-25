@@ -32,6 +32,8 @@ from mananze_os.provider_router import ProviderRouter, ProviderRoutingResult
 from mananze_os.policy_engine import PolicyEngine
 from mananze_os.quality_controller import QualityAssessment, QualityControllerIntelligence
 from mananze_os.task_scheduler import ScheduledTask, TaskScheduler
+from mananze_os.tool_catalog import default_tool_registry
+from mananze_os.tool_selection import ToolSelector
 from mananze_os.sqlite_task_store import SQLiteTaskStore
 from mananze_os.tenant import Tenant
 from mananze_os.workforce_planner import (
@@ -137,6 +139,8 @@ class MananzeRuntime:
         self.action_gate = ActionGate()
         self.compiler = IntelligenceCompiler()
         self.workforce_planner = WorkforcePlanner()
+        self.tool_registry = default_tool_registry()
+        self.tool_selector = ToolSelector(self.tool_registry)
         self.workforce_fabric = WorkforceFabric()
         self.policy_engine = PolicyEngine()
         self.authorization_engine = AuthorizationEngine()
@@ -523,20 +527,54 @@ class MananzeRuntime:
             operation_key = None
 
         for planned_role in prepared.workforce.roles:
-            self.workforce_fabric.assign_role(
-                assignment_id=(
-                    f"assignment:"
-                    f"{prepared.work_order.work_order_id}:"
-                    f"{planned_role.role_id}"
-                ),
-                execution_id=execution_id,
-                node=ExecutionNode(
-                    node_id=f"node:{planned_role.role_id}",
-                    capability_id=planned_role.capability_id,
-                    skill_ids=planned_role.skill_ids,
-                ),
-                role_id=planned_role.role_id,
+            available_tools = self.tool_registry.tools_for_capability(
+                planned_role.capability_id
             )
+
+            if not available_tools or not planned_role.skill_ids:
+                self.workforce_fabric.assign_role(
+                    assignment_id=(
+                        f"assignment:"
+                        f"{prepared.work_order.work_order_id}:"
+                        f"{planned_role.role_id}"
+                    ),
+                    execution_id=execution_id,
+                    node=ExecutionNode(
+                        node_id=f"node:{planned_role.role_id}",
+                        capability_id=planned_role.capability_id,
+                        skill_ids=planned_role.skill_ids,
+                    ),
+                    role_id=planned_role.role_id,
+                )
+                continue
+
+            for skill_id in planned_role.skill_ids:
+                tool_selection = self.tool_selector.select(
+                    planned_role.capability_id,
+                    objective=planned_role.objective,
+                    required_skill_ids=(skill_id,),
+                )
+
+                self.workforce_fabric.assign_role(
+                    assignment_id=(
+                        f"assignment:"
+                        f"{prepared.work_order.work_order_id}:"
+                        f"{planned_role.role_id}:"
+                        f"{skill_id}"
+                    ),
+                    execution_id=execution_id,
+                    node=ExecutionNode(
+                        node_id=(
+                            f"node:"
+                            f"{planned_role.role_id}:"
+                            f"{skill_id}"
+                        ),
+                        capability_id=planned_role.capability_id,
+                        skill_ids=(skill_id,),
+                        tool_id=tool_selection.tool_id,
+                    ),
+                    role_id=planned_role.role_id,
+                )
 
         execution_state, _ = self.execution_lifecycle.transition(
             execution_state,

@@ -394,7 +394,7 @@ def test_mananze_runtime_end_to_end():
     assert completed.report.evidence[1].status == "allowed"
     assert completed.report.evidence[2].action == "workforce_assignment"
     assert completed.report.evidence[2].status == "validated"
-    assert "assignment_count=8" in completed.report.evidence[2].details
+    assert "assignment_count=10" in completed.report.evidence[2].details
     assert completed.report.evidence[3].action == "controlled_execution"
     assert completed.report.evidence[3].status == "completed"
 
@@ -533,25 +533,56 @@ def test_mananze_runtime_creates_execution_scoped_workforce_assignments():
         "exec:WO-ASSIGN-001"
     )
 
-    assert len(assignments) == len(capabilities)
-    assert [
+    assert len(assignments) == 10
+
+    assignment_ids = [
         assignment.assignment_id
         for assignment in assignments
-    ] == [
-        f"assignment:WO-ASSIGN-001:{capability_id}"
-        for capability_id in capabilities
     ]
+
+    assert assignment_ids == [
+        "assignment:WO-ASSIGN-001:marketing:marketing:campaign_planning",
+        "assignment:WO-ASSIGN-001:marketing:marketing:content_creation",
+        "assignment:WO-ASSIGN-001:lead_generation",
+        "assignment:WO-ASSIGN-001:sales:sales:lead_qualification",
+        "assignment:WO-ASSIGN-001:sales:sales:follow_up",
+        "assignment:WO-ASSIGN-001:appointment_booking",
+        "assignment:WO-ASSIGN-001:customer_communications:customer_communications:messaging",
+        "assignment:WO-ASSIGN-001:retention",
+        "assignment:WO-ASSIGN-001:revenue:revenue:performance_analysis",
+        "assignment:WO-ASSIGN-001:reporting:reporting:business_reporting",
+    ]
+
     assert [
         assignment.node_id
         for assignment in assignments
     ] == [
-        f"node:{capability_id}"
-        for capability_id in capabilities
+        "node:marketing:marketing:campaign_planning",
+        "node:marketing:marketing:content_creation",
+        "node:lead_generation",
+        "node:sales:sales:lead_qualification",
+        "node:sales:sales:follow_up",
+        "node:appointment_booking",
+        "node:customer_communications:customer_communications:messaging",
+        "node:retention",
+        "node:revenue:revenue:performance_analysis",
+        "node:reporting:reporting:business_reporting",
     ]
     assert [
         assignment.role_id
         for assignment in assignments
-    ] == list(capabilities)
+    ] == [
+        "marketing",
+        "marketing",
+        "lead_generation",
+        "sales",
+        "sales",
+        "appointment_booking",
+        "customer_communications",
+        "retention",
+        "revenue",
+        "reporting",
+    ]
     assert all(
         assignment.execution_id == "exec:WO-ASSIGN-001"
         for assignment in assignments

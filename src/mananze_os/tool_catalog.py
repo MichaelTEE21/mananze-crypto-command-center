@@ -1,4 +1,4 @@
-﻿"""Authoritative bootstrap catalog for Mananze OS tools.
+"""Authoritative bootstrap catalog for Mananze OS tools.
 
 This module only defines and registers ToolDefinition contracts.
 It does not execute tools, approve actions, or register providers.
@@ -10,6 +10,7 @@ from .tool_registry import ToolDefinition, ToolRegistry
 TOOLS: tuple[ToolDefinition, ...] = (
     ToolDefinition(
         tool_id="mananze:marketing:campaign_plan",
+        supported_skill_ids=("marketing:campaign_planning",),
         version="1.0.0",
         description="Creates a structured marketing campaign plan.",
         capability_id="marketing",
@@ -27,6 +28,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:marketing:content_draft",
+        supported_skill_ids=("marketing:content_creation",),
         version="1.0.0",
         description="Produces structured marketing content drafts.",
         capability_id="marketing",
@@ -44,6 +46,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:sales:lead_qualification",
+        supported_skill_ids=("sales:lead_qualification",),
         version="1.0.0",
         description="Evaluates and structures sales-lead qualification data.",
         capability_id="sales",
@@ -61,6 +64,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:sales:follow_up_plan",
+        supported_skill_ids=("sales:follow_up",),
         version="1.0.0",
         description="Creates a structured sales follow-up plan.",
         capability_id="sales",
@@ -78,6 +82,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:revenue:performance_report",
+        supported_skill_ids=("revenue:performance_analysis",),
         version="1.0.0",
         description="Produces a structured revenue performance report.",
         capability_id="revenue",
@@ -95,6 +100,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:reporting:business_report",
+        supported_skill_ids=("reporting:business_reporting",),
         version="1.0.0",
         description="Produces a structured business report from supplied evidence.",
         capability_id="reporting",
@@ -112,6 +118,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:customer_communications:message_draft",
+        supported_skill_ids=("customer_communications:messaging",),
         version="1.0.0",
         description="Creates a structured customer communication draft.",
         capability_id="customer_communications",
@@ -129,6 +136,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:logistics:route_plan",
+        supported_skill_ids=("logistics:route_planning",),
         version="1.0.0",
         description="Creates a structured logistics route plan.",
         capability_id="logistics",
@@ -146,6 +154,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:fleet:fleet_status",
+        supported_skill_ids=("fleet:fleet_monitoring",),
         version="1.0.0",
         description="Structures fleet status and monitoring information.",
         capability_id="fleet",
@@ -163,6 +172,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:cost_analysis:cost_review",
+        supported_skill_ids=("cost_analysis:cost_review",),
         version="1.0.0",
         description="Reviews supplied operational cost information.",
         capability_id="cost_analysis",
@@ -180,6 +190,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ),
     ToolDefinition(
         tool_id="mananze:operations:workflow_plan",
+        supported_skill_ids=("operations:workflow_coordination",),
         version="1.0.0",
         description="Creates a structured operational workflow plan.",
         capability_id="operations",

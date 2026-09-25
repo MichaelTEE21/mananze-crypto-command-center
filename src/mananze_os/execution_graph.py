@@ -9,6 +9,7 @@ class ExecutionNode:
     capability_id: str
     skill_ids: tuple[str, ...] = ()
     dependencies: tuple[str, ...] = ()
+    tool_id: str | None = None
 
     def __post_init__(self) -> None:
         if not self.node_id.strip():
@@ -19,6 +20,9 @@ class ExecutionNode:
 
         if any(not skill_id.strip() for skill_id in self.skill_ids):
             raise ValueError("skill_id is required")
+
+        if self.tool_id is not None and not self.tool_id.strip():
+            raise ValueError("tool_id cannot be blank")
 
 
 @dataclass(frozen=True)

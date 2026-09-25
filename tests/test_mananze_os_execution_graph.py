@@ -216,3 +216,23 @@ def test_execution_node_rejects_blank_skill_id() -> None:
             capability_id="sales",
             skill_ids=(" ",),
         )
+
+
+def test_execution_node_can_carry_selected_tool():
+    node = ExecutionNode(
+        node_id="node-marketing",
+        capability_id="marketing",
+        skill_ids=("marketing:campaign_planning",),
+        tool_id="mananze:marketing:campaign_plan",
+    )
+
+    assert node.tool_id == "mananze:marketing:campaign_plan"
+
+
+def test_execution_node_rejects_blank_tool_id():
+    with pytest.raises(ValueError, match="tool_id cannot be blank"):
+        ExecutionNode(
+            node_id="node-marketing",
+            capability_id="marketing",
+            tool_id="   ",
+        )
