@@ -12,7 +12,6 @@ from mananze_os.authorization import (
     AuthorizationDecision,
     AuthorizationEngine,
 )
-from mananze_os.capability_workforce_bridge import CapabilityWorkforcePlan
 from mananze_os.domain_qa import DomainQA, QAVerdict
 from mananze_os.execution_context_integrity import (
     ExecutionContext,
@@ -90,12 +89,13 @@ class GovernedExecutionController:
     def evaluate(
         self,
         *,
-        plan: CapabilityWorkforcePlan,
+        plan,
         execution_id: str,
         task_id: str,
         actor_id: str,
         capability_id: str,
         action: str,
+        node_id: str | None = None,
         authority,
         tenant,
         permissions,
@@ -105,6 +105,7 @@ class GovernedExecutionController:
         risk: str = "medium",
         requires_approval: bool = False,
         economic_allowed: bool = True,
+        existing_approval: ApprovalDecision | None = None,
     ) -> GovernedExecutionResult:
         if not execution_id.strip():
             raise ValueError("execution_id is required")
@@ -121,18 +122,40 @@ class GovernedExecutionController:
         if not action.strip():
             raise ValueError("action is required")
 
-        matching_nodes = tuple(
-            node
-            for node in plan.execution_graph.nodes
-            if node.capability_id == capability_id
-        )
+        if node_id is not None and not node_id.strip():
+            raise ValueError("node_id must not be blank")
 
-        if len(matching_nodes) != 1:
-            raise ValueError(
-                "capability_id must identify exactly one execution node"
+        if node_id is not None:
+            matching_nodes = tuple(
+                node
+                for node in plan.execution_graph.nodes
+                if node.node_id == node_id
             )
 
-        node = matching_nodes[0]
+            if len(matching_nodes) != 1:
+                raise ValueError(
+                    "node_id must identify exactly one execution node"
+                )
+
+            node = matching_nodes[0]
+
+            if node.capability_id != capability_id:
+                raise ValueError(
+                    "node_id capability does not match capability_id"
+                )
+        else:
+            matching_nodes = tuple(
+                node
+                for node in plan.execution_graph.nodes
+                if node.capability_id == capability_id
+            )
+
+            if len(matching_nodes) != 1:
+                raise ValueError(
+                    "capability_id must identify exactly one execution node"
+                )
+
+            node = matching_nodes[0]
 
         if node.tool_id is not None and node.tool_id != tool_id:
             raise ValueError(
@@ -248,6 +271,32 @@ class GovernedExecutionController:
         )
 
         if not action_decision.allowed:
+            if (
+                action_decision.effect == "approval_required"
+                and existing_approval is not None
+                and existing_approval.approved
+            ):
+                return GovernedExecutionResult(
+                    execution_id=execution_id,
+                    tenant_id=plan.tenant_id,
+                    work_order_id=plan.work_order_id,
+                    task_id=task_id,
+                    actor_id=actor_id,
+                    capability_id=capability_id,
+                    action=action,
+                    disposition="allowed",
+                    reasons=(
+                        *action_decision.reasons,
+                        "existing approval satisfied governed execution",
+                    ),
+                    context=context,
+                    qa=qa,
+                    policy=policy_decision,
+                    authorization=authorization,
+                    approval=existing_approval,
+                    action_request=action_request,
+                )
+
             if action_decision.effect != "approval_required":
                 return GovernedExecutionResult(
                     execution_id=execution_id,

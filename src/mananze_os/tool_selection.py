@@ -15,6 +15,33 @@ class ToolSelection:
     tool_id: str
 
 
+def _tool_supports_tenant(
+    tool: ToolDefinition,
+    tenant_id: str,
+) -> bool:
+    """Return whether a tool is permitted for the tenant."""
+    supported_tenants = tuple(
+        tenant
+        for tenant in tool.supported_tenant_ids
+        if isinstance(tenant, str) and tenant.strip()
+    )
+
+    if not supported_tenants:
+        return True
+
+    return tenant_id in supported_tenants
+
+
+def _risk_order(risk: str) -> int:
+    """Return deterministic ordering for tool risk levels."""
+    return {
+        "low": 0,
+        "medium": 1,
+        "high": 2,
+        "critical": 3,
+    }.get(str(risk).strip().lower(), 99)
+
+
 class ToolSelector:
     """Select an eligible OS tool for a compiled capability."""
 
@@ -246,13 +273,23 @@ class ToolSelectionEngine:
 
     def bind(
         self,
-        plan: CapabilityWorkforcePlan,
+        plan: object,
         *,
         granted_permission_ids: Iterable[str] = (),
         available_provider_ids: Iterable[str] = (),
     ) -> ToolBindingPlan:
-        if not isinstance(plan, CapabilityWorkforcePlan):
-            raise TypeError("plan must be a CapabilityWorkforcePlan")
+        required_attributes = (
+            "tenant_id",
+            "twin_id",
+            "work_order_id",
+            "execution_graph",
+        )
+
+        if any(not hasattr(plan, attribute) for attribute in required_attributes):
+            raise TypeError(
+                "plan must provide tenant_id, twin_id, work_order_id, "
+                "and execution_graph"
+            )
 
         granted_permissions = {
             permission_id.strip()
@@ -372,30 +409,3 @@ class ToolSelectionEngine:
             ),
         )
 
-
-def _tool_supports_tenant(
-    tool: ToolDefinition,
-    tenant_id: str,
-) -> bool:
-    if not tool.supported_tenant_ids:
-        return True
-
-    return tenant_id in tool.supported_tenant_ids
-
-
-def _risk_order(risk: str) -> int:
-    return {
-        "low": 0,
-        "medium": 1,
-        "high": 2,
-        "critical": 3,
-    }.get(risk, 99)
-
-
-__all__ = [
-    "ToolSelection",
-    "ToolSelector",
-    "ToolBinding",
-    "ToolBindingPlan",
-    "ToolSelectionEngine",
-]
